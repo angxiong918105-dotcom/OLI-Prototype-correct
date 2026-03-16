@@ -1,14 +1,18 @@
 import { useParams } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
+import { getModuleById } from '../data/modules';
 
 export default function Reflection() {
   const { id } = useParams();
+  const moduleInfo = getModuleById(id);
 
   return (
     <div className="flex-1 flex flex-col md:flex-row min-h-0">
       {/* Left side: Prompt */}
       <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-black/5 p-8 md:p-12 flex flex-col bg-white/50 overflow-y-auto">
-        <span className="text-xs font-medium text-muted uppercase tracking-widest mb-8">Reflection: {id}</span>
+        <span className="text-xs font-medium text-muted uppercase tracking-widest mb-8">
+          {moduleInfo ? `Module ${moduleInfo.number}: ${moduleInfo.title}` : `Reflection: ${id}`}
+        </span>
         <h2 className="font-serif text-3xl mb-6 text-ink leading-tight">What patterns do you observe in your current routine?</h2>
         <p className="text-sm text-muted leading-relaxed">
           Don't judge, just observe. Write down what happens before, during, and after the behavior you want to change.

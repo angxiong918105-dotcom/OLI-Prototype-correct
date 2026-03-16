@@ -1,14 +1,20 @@
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { getModuleById } from '../data/modules';
 
 export default function Module() {
   const { id } = useParams();
+  const moduleInfo = getModuleById(id);
 
   return (
     <div className="max-w-2xl mx-auto w-full py-20 px-8">
       <div className="mb-12">
-        <span className="text-xs font-medium text-muted uppercase tracking-widest">Module</span>
-        <h1 className="font-serif text-4xl mt-2 capitalize text-ink">{id?.replace('-', ' ')}</h1>
+        <span className="text-xs font-medium text-muted uppercase tracking-widest">
+          {moduleInfo ? `Module ${moduleInfo.number}` : 'Module'}
+        </span>
+        <h1 className="font-serif text-4xl mt-2 capitalize text-ink">
+          {moduleInfo?.title ?? id?.replace('-', ' ')}
+        </h1>
       </div>
       
       <div className="prose prose-stone max-w-none">
