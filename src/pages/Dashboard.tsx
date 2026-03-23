@@ -1,14 +1,12 @@
-import { ArrowRight, BookOpen } from 'lucide-react';
+import { ArrowRight, BookOpen, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useJournal } from '../context/JournalContext';
+import { modules } from '../data/modules';
+import OLMDashboard from '../components/OLMDashboard';
 
-const journeySteps = [
-  { label: 'Reframe', active: true },
-  { label: 'Observe', active: false },
-  { label: 'Ideate', active: false },
-  { label: 'Prototype', active: false },
-  { label: 'Test', active: false },
-];
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -18,71 +16,110 @@ function formatDate(iso: string) {
   });
 }
 
+function useCurrentFocus(entries: { moduleId: string }[]) {
+  const completedIds = new Set(entries.map((e) => e.moduleId));
+  const nextModule = modules.find((m) => !completedIds.has(m.id));
+  const count = completedIds.size;
+  return {
+    module: nextModule ?? modules[modules.length - 1],
+    completed: count,
+    total: modules.length,
+    pct: Math.round((count / modules.length) * 100),
+    allDone: count >= modules.length,
+  };
+}
+
+function aiInsight(n: number): string {
+  if (n === 0)
+    return "Your meaning design canvas is blank \u2014 every great design begins with a single observation. Start whenever you\u2019re ready.";
+  if (n <= 2)
+    return "You\u2019re beginning to notice patterns in your life. Each observation adds depth to your understanding of what creates meaning for you.";
+  if (n <= 4)
+    return "Your reflections are revealing themes. Look for connections between what energizes you and what matters deeply \u2014 that\u2019s where meaning lives.";
+  return "A picture is emerging from your practice. Your meaning design is taking shape through observation, experimentation, and reflection.";
+}
+
+/* ------------------------------------------------------------------ */
+/*  Dashboard                                                          */
+/* ------------------------------------------------------------------ */
+
 export default function Dashboard() {
-  const { latestEntry, hasEntries } = useJournal();
+  const { entries, latestEntry, hasEntries } = useJournal();
+  const focus = useCurrentFocus(entries);
 
   return (
-    <div className="max-w-2xl mx-auto w-full py-20 px-8">
-      {/* Title & Framing */}
+    <div className="max-w-4xl mx-auto w-full py-20 px-8">
+      {/* ── Title ─────────────────────────────────────────────── */}
       <h1 className="font-serif text-4xl mb-3 text-ink">Meaning by Design</h1>
-      <p className="text-lg text-muted leading-relaxed mb-16">
+      <p className="text-lg text-muted leading-relaxed mb-12">
         Apply a designer approach to create more meaning and purpose in life.
       </p>
 
-      {/* Start Your Journey Card */}
-      <div className="p-8 rounded-2xl border border-black/5 bg-white shadow-sm mb-8">
-        <h2 className="font-serif text-2xl text-ink mb-3">Start My Meaning Design</h2>
-        <p className="text-sm text-muted/70 mb-8">
-          7 micro-learning modules · &lt; 10 minutes each
-        </p>
+      {/* ── Current Focus ─────────────────────────────────────── */}
+      <div className="p-8 rounded-2xl border border-black/5 bg-white shadow-sm mb-6">
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <span className="text-[10px] font-semibold text-muted uppercase tracking-widest">
+              {focus.allDone ? 'Journey Complete' : 'Current Focus'}
+            </span>
+            <h2 className="font-serif text-2xl text-ink mt-1">
+              {focus.module.title}
+            </h2>
+            <p className="text-sm text-muted/70 mt-1">{focus.module.desc}</p>
+          </div>
 
-        <Link
-          to="/module/intro"
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-all hover:-translate-y-0.5 hover:shadow-md"
-        >
-          Module 1
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
-
-      {/* Your Learning Path */}
-      <div className="p-8 rounded-2xl border border-black/5 bg-white/50 mb-8">
-        <span className="text-xs font-medium text-muted uppercase tracking-widest">My Learning Progress</span>
-
-        <div className="mt-6 flex items-center justify-between relative">
-          {/* Connecting line */}
-          <div className="absolute left-0 right-0 top-3 h-px bg-black/10 z-0" />
-
-          {journeySteps.map((step, idx) => (
-            <div key={step.label} className="flex flex-col items-center gap-2 relative z-10">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                idx === 0
-                  ? 'bg-ink'
-                  : 'bg-paper border border-black/10'
-              }`}>
-                {idx === 0 && <div className="w-2 h-2 rounded-full bg-white" />}
-                {idx > 0 && <div className="w-1.5 h-1.5 rounded-full bg-black/10" />}
-              </div>
-              <span className={`text-[10px] uppercase tracking-widest font-medium ${
-                idx === 0 ? 'text-ink' : 'text-muted'
-              }`}>
-                {step.label}
-              </span>
-            </div>
-          ))}
+          {!focus.allDone && (
+            <Link
+              to={focus.module.path}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-all hover:-translate-y-0.5 hover:shadow-md shrink-0"
+            >
+              Continue
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          )}
         </div>
 
-        <p className="text-sm text-muted leading-relaxed mt-6">
-          From reframing to experiment — each module builds toward a small and testable meaning design prototype you can try in your own life.
+        {/* progress bar */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-medium text-muted uppercase tracking-widest">
+              Overall Progress
+            </span>
+            <span className="text-xs text-muted">
+              {focus.completed} of {focus.total} modules
+            </span>
+          </div>
+          <div className="h-1.5 rounded-full bg-black/[0.04] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-ink/70 transition-all duration-700"
+              style={{ width: `${focus.pct}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── AI Insight ────────────────────────────────────────── */}
+      <div className="flex items-start gap-3 px-6 py-5 rounded-2xl bg-sage/20 border border-sage/30 mb-10">
+        <Sparkles className="w-4 h-4 text-[#6B8F6E] mt-0.5 shrink-0" />
+        <p className="text-sm text-ink/70 leading-relaxed italic">
+          {aiInsight(entries.length)}
         </p>
       </div>
 
-      {/* Your Meaning Journal */}
-      <div className="p-8 rounded-2xl border border-black/5 bg-white shadow-sm">
+      {/* ── OLM Dashboard (4 modules) ────────────────────────── */}
+      <OLMDashboard entries={entries} />
+
+      {/* ── Recent Insights / Journal ─────────────────────────── */}
+      <div className="mt-10 p-8 rounded-2xl border border-black/5 bg-white shadow-sm">
         <div className="flex items-center justify-between mb-6">
-          <span className="text-xs font-medium text-muted uppercase tracking-widest">Your Meaning Journal</span>
+          <span className="text-[10px] font-semibold text-muted uppercase tracking-widest">
+            Recent Insights
+          </span>
           {hasEntries && (
-            <Link to="/journal" className="text-xs text-muted hover:text-ink transition-colors">
+            <Link
+              to="/journal"
+              className="text-xs text-muted hover:text-ink transition-colors"
+            >
               View all entries
             </Link>
           )}
@@ -100,28 +137,34 @@ export default function Dashboard() {
         {hasEntries && latestEntry && (
           <div>
             <div className="flex items-baseline gap-2 mb-5">
-              <span className="text-[10px] font-semibold text-muted uppercase tracking-widest">Latest Entry</span>
+              <span className="text-[10px] font-semibold text-muted uppercase tracking-widest">
+                Latest Entry
+              </span>
               <span className="text-xs text-muted">
                 {formatDate(latestEntry.createdAt)}
                 {latestEntry.moduleTitle && ` · ${latestEntry.moduleTitle}`}
               </span>
             </div>
 
-            {latestEntry.selectedSignals && latestEntry.selectedSignals.length > 0 && (
-              <div className="mb-5">
-                <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-2">
-                  What you noticed
-                </p>
-                <ul className="space-y-1">
-                  {latestEntry.selectedSignals.map(signal => (
-                    <li key={signal} className="text-sm text-ink leading-relaxed flex gap-2">
-                      <span className="text-muted mt-0.5 shrink-0">·</span>
-                      {signal}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {latestEntry.selectedSignals &&
+              latestEntry.selectedSignals.length > 0 && (
+                <div className="mb-5">
+                  <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-2">
+                    What you noticed
+                  </p>
+                  <ul className="space-y-1">
+                    {latestEntry.selectedSignals.map((signal) => (
+                      <li
+                        key={signal}
+                        className="text-sm text-ink leading-relaxed flex gap-2"
+                      >
+                        <span className="text-muted mt-0.5 shrink-0">·</span>
+                        {signal}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
             {latestEntry.reflectionText && (
               <div className="mb-5">

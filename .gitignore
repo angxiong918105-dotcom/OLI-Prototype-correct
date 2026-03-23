@@ -1,3 +1,5 @@
 node_modules/
 dist/
 .env
+.archiver_shadow/
+.snapshots/
