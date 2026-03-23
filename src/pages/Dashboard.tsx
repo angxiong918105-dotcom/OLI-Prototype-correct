@@ -44,8 +44,16 @@ function aiInsight(n: number): string {
 /* ------------------------------------------------------------------ */
 
 export default function Dashboard() {
-  const { entries, latestEntry, hasEntries } = useJournal();
+  const { entries, latestEntry, hasEntries, loading, restart } = useJournal();
   const focus = useCurrentFocus(entries);
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto w-full py-20 px-8 flex items-center justify-center min-h-[60vh]">
+        <p className="text-sm text-muted animate-pulse">Loading your progress…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto w-full py-20 px-8">
@@ -108,6 +116,18 @@ export default function Dashboard() {
 
       {/* ── OLM Dashboard (4 modules) ────────────────────────── */}
       <OLMDashboard entries={entries} />
+
+      {/* ── Restart ───────────────────────────────────────────── */}
+      {hasEntries && (
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={restart}
+            className="text-xs text-muted hover:text-ink transition-colors underline underline-offset-2"
+          >
+            Restart journey
+          </button>
+        </div>
+      )}
 
       {/* ── Recent Insights / Journal ─────────────────────────── */}
       <div className="mt-10 p-8 rounded-2xl border border-black/5 bg-white shadow-sm">

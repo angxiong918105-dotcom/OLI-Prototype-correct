@@ -5,8 +5,9 @@ import { useJournal } from '../context/JournalContext';
 
 export default function Sidebar() {
   const location = useLocation();
-  const { hasEntries } = useJournal();
+  const { hasEntries, entries } = useJournal();
 
+  const completedIds = new Set(entries.map(e => e.moduleId));
   const activeIndex = modules.findIndex(m => location.pathname.startsWith(m.path));
 
   return (
@@ -55,8 +56,8 @@ export default function Sidebar() {
 
           <div className="space-y-5">
             {modules.map((mod, idx) => {
-              const isCompleted = activeIndex !== -1 && idx < activeIndex;
-              const isCurrent = idx === activeIndex;
+              const isCompleted = completedIds.has(mod.id);
+              const isCurrent = idx === activeIndex && !isCompleted;
 
               return (
                 <NavLink key={mod.id} to={mod.path} className="relative flex items-start gap-4 group">
