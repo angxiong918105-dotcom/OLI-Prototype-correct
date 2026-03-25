@@ -16,3 +16,9 @@ export type ReflectionPayload = {
   selectedSignals?: string[];
   reflectionText?: string;
 };
+
+export type FeedbackResponse = {
+  summary: string;
+  pattern: string;
+  next_step: string;
+};

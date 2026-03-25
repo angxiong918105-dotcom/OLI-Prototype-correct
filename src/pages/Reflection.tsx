@@ -31,20 +31,14 @@ export default function Reflection() {
       
       {/* Right side: Workspace */}
       <div className="flex-1 p-8 md:p-12 flex flex-col bg-paper">
-        <textarea 
-          className="flex-1 w-full bg-transparent resize-none outline-none text-lg leading-relaxed text-ink placeholder:text-black/20"
-          placeholder="Start typing your observations here..."
-        />
-        
-        {/* AI Action Area */}
-        <div className="mt-8 flex items-center justify-between border-t border-black/5 pt-6">
-          <div className="flex items-center gap-2 text-sm text-muted">
+        <div className="h-full w-full rounded-2xl border border-black/5 bg-white/70 p-8 flex flex-col justify-center">
+          <div className="flex items-center gap-2 text-sm text-muted mb-3">
             <Sparkles className="w-4 h-4 text-emerald-600" />
-            <span>AI Coach is listening...</span>
+            <span>Reflection flow note</span>
           </div>
-          <button className="px-5 py-2.5 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-colors shadow-sm">
-            Distill Insights
-          </button>
+          <p className="text-sm text-ink leading-relaxed">
+            Reflection writing happens in Module 1 and is saved to your Meaning Journal, where your AI feedback appears with your saved entry.
+          </p>
         </div>
       </div>
     </div>

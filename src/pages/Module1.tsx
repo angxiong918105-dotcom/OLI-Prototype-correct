@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowRight, ArrowDown, HelpCircle, FlaskConical } from 'lucide-react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { ArrowRight, ArrowDown, HelpCircle, FlaskConical, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useJournal } from '../context/JournalContext';
 
@@ -18,68 +18,217 @@ const wickedExamples = [
 
 const sections = ['Check-In', 'Stories & Reflection', 'Wicked Problems', 'Design Mindset'];
 
-type FlipCardProps = {
-  initial: string;
-  name: string;
-  identityLine: string;
-  secondaryLine: string;
-  frontQuote: string;
-  backSections: { header: string; bullets: string[] }[];
-  backQuote: string;
-};
+/* ── Person data ── */
+const people = [
+  {
+    name: 'Allison',
+    role: 'Accountant \u00B7 Married \u00B7 2 kids',
+    photo: '/allison.jpg',
+    tension: "Fine isn\u2019t enough.",
+    quote: "My life was perfectly fine.\nBut fine didn\u2019t feel like enough.",
+    bio: "Her life is stable, predictable, and objectively good.\nNothing is wrong \u2014 which makes it harder to explain why it feels off.\nWhat she\u2019s missing isn\u2019t success, but a sense of aliveness.",
+    surface: ['Stable job', 'Comfortable life', 'Routine'],
+    underneath: ['Flat', 'Restless', 'Not enough'],
+  },
+  {
+    name: 'Sonya',
+    role: 'Software Engineer \u00B7 Big Tech',
+    photo: '/sonya.jpg',
+    tension: "Success isn\u2019t meaning.",
+    quote: "I know I should be happy...\nbut it\u2019s just not working for me.",
+    bio: "She achieved what she once thought would make her fulfilled.\nEverything signals success from the outside.\nBut internally, the meaning never caught up with the achievement.",
+    surface: ['Strong career', 'High salary', 'Impact'],
+    underneath: ['Empty', 'Wants meaning', 'Something off'],
+  },
+];
 
-function FlipCard({ initial, name, identityLine, secondaryLine, frontQuote, backSections, backQuote }: FlipCardProps) {
+/* ── Story Carousel ── */
+function StoryCarousel() {
+  const [activeIndex, setActiveIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
+  const [sliding, setSliding] = useState<'left' | 'right' | null>(null);
+
+  const person = people[activeIndex];
+
+  const goTo = useCallback((idx: number) => {
+    if (idx === activeIndex || sliding) return;
+    setSliding(idx > activeIndex ? 'right' : 'left');
+    setFlipped(false);
+    setTimeout(() => {
+      setActiveIndex(idx);
+      setSliding(null);
+    }, 280);
+  }, [activeIndex, sliding]);
 
   return (
-    <div
-      className={`flip-card cursor-pointer ${flipped ? 'flipped' : ''}`}
-      onClick={() => setFlipped(!flipped)}
-      style={{ minHeight: 420 }}
-    >
-      <div className="flip-card-inner">
-        {/* Front */}
-        <div className="flip-card-front p-8 rounded-2xl border border-black/5 bg-white shadow-sm flex flex-col">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-12 h-12 rounded-full bg-sage flex items-center justify-center text-base font-medium text-ink shrink-0">
-              {initial}
-            </div>
-            <div>
-              <span className="text-sm font-medium text-ink">{name}</span>
-              <p className="text-xs text-muted">{identityLine}</p>
+    <div className="flex flex-col items-center gap-5">
+      {/* Fixed-size card */}
+      <div
+        className="story-card-wrapper cursor-pointer select-none"
+        onClick={() => setFlipped(f => !f)}
+      >
+        <div
+          className={`story-card-inner ${
+            sliding === 'right' ? 'story-slide-out-left' :
+            sliding === 'left' ? 'story-slide-out-right' : ''
+          }`}
+          style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+        >
+          {/* ─── FRONT ─── */}
+          <div className="story-card-face story-card-front">
+            <div className="flex gap-7 h-full">
+              {/* Left column: photo + identity + quote */}
+              <div className="flex flex-col items-start shrink-0" style={{ width: 160 }}>
+                {/* Profile photo */}
+                <img
+                  src={person.photo}
+                  alt={person.name}
+                  className="object-cover mb-4 bg-sage/30"
+                  style={{ width: 120, height: 120, borderRadius: 16 }}
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.style.display = 'none';
+                    const fallback = target.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+                {/* Fallback if image missing */}
+                <div
+                  className="items-center justify-center bg-sage/40 text-ink/30 text-3xl font-semibold mb-4"
+                  style={{ width: 120, height: 120, borderRadius: 16, display: 'none' }}
+                >
+                  {person.name[0]}
+                </div>
+
+                {/* Name */}
+                <p className="font-medium text-ink" style={{ fontSize: 16 }}>
+                  {person.name}
+                </p>
+                {/* Role */}
+                <p className="text-muted mt-0.5" style={{ fontSize: 13, lineHeight: 1.4 }}>
+                  {person.role}
+                </p>
+                {/* Quote */}
+                <p className="text-muted italic mt-4 whitespace-pre-line" style={{ fontSize: 14, lineHeight: 1.5 }}>
+                  &ldquo;{person.quote}&rdquo;
+                </p>
+              </div>
+
+              {/* Right column: tension headline + bio */}
+              <div className="flex flex-col flex-1 min-w-0">
+                {/* Tension headline — primary focal point */}
+                <h3 className="font-serif font-semibold text-ink leading-tight mb-5" style={{ fontSize: 32 }}>
+                  {person.tension}
+                </h3>
+                {/* Bio */}
+                <p className="text-ink/80 whitespace-pre-line flex-1" style={{ fontSize: 15, lineHeight: 1.5 }}>
+                  {person.bio}
+                </p>
+                {/* Flip hint */}
+                <p className="text-muted/40 uppercase mt-4" style={{ fontSize: 10, letterSpacing: '0.1em' }}>
+                  Tap to see more
+                </p>
+              </div>
             </div>
           </div>
-          <p className="text-xs text-muted mb-5">{secondaryLine}</p>
-          <p className="font-serif text-xl text-ink italic leading-relaxed flex-1">
-            "{frontQuote}"
-          </p>
-          <span className="text-[10px] text-muted uppercase tracking-widest mt-4">
-            Tap to see more
-          </span>
-        </div>
 
-        {/* Back */}
-        <div className="flip-card-back p-8 rounded-2xl border border-black/5 bg-white shadow-sm flex flex-col overflow-y-auto">
-          {backSections.map(section => (
-            <div key={section.header} className="mb-4">
-              <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-2">{section.header}</p>
-              <ul className="space-y-1.5">
-                {section.bullets.map(b => (
-                  <li key={b} className="text-xs text-ink leading-relaxed flex gap-2">
-                    <span className="text-muted mt-0.5 shrink-0">·</span>
-                    {b}
-                  </li>
-                ))}
-              </ul>
+          {/* ─── BACK ─── */}
+          <div className="story-card-face story-card-back">
+            {/* Back header: small photo + name */}
+            <div className="flex items-center gap-3 mb-6">
+              <img
+                src={person.photo}
+                alt={person.name}
+                className="object-cover bg-sage/30"
+                style={{ width: 48, height: 48, borderRadius: 10 }}
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  target.style.display = 'none';
+                  const fallback = target.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'flex';
+                }}
+              />
+              <div
+                className="items-center justify-center bg-sage/40 text-ink/30 text-lg font-semibold"
+                style={{ width: 48, height: 48, borderRadius: 10, display: 'none' }}
+              >
+                {person.name[0]}
+              </div>
+              <p className="font-medium text-ink" style={{ fontSize: 16 }}>{person.name}</p>
             </div>
-          ))}
-          <p className="font-serif text-sm text-ink italic leading-relaxed mt-auto pt-3 border-t border-black/5">
-            "{backQuote}"
-          </p>
-          <span className="text-[10px] text-muted uppercase tracking-widest mt-3">
-            Tap to flip back
-          </span>
+
+            {/* Two-column contrast */}
+            <div className="grid grid-cols-2 gap-5 flex-1">
+              {/* On the surface */}
+              <div className="p-5 rounded-2xl bg-sage/20 border border-sage/30 flex flex-col">
+                <p className="font-semibold uppercase mb-4" style={{ fontSize: 12, letterSpacing: '0.08em', color: '#B8860B' }}>
+                  On the surface
+                </p>
+                <div className="space-y-3 flex-1">
+                  {person.surface.map(item => (
+                    <div key={item} className="flex items-center gap-2.5">
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#B8860B', opacity: 0.5 }} />
+                      <span className="text-ink/70" style={{ fontSize: 15 }}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Underneath */}
+              <div className="p-5 rounded-2xl bg-ink/[0.03] border border-black/5 flex flex-col">
+                <p className="font-semibold uppercase mb-4" style={{ fontSize: 12, letterSpacing: '0.08em', color: '#B8860B' }}>
+                  Underneath
+                </p>
+                <div className="space-y-3 flex-1">
+                  {person.underneath.map(item => (
+                    <div key={item} className="flex items-center gap-2.5">
+                      <div className="w-2 h-2 rounded-full bg-ink/25 shrink-0" />
+                      <span className="text-ink italic" style={{ fontSize: 15 }}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Flip hint */}
+            <p className="text-muted/40 uppercase mt-5 text-center" style={{ fontSize: 10, letterSpacing: '0.1em' }}>
+              Tap to flip back
+            </p>
+          </div>
         </div>
+      </div>
+
+      {/* Navigation */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={e => { e.stopPropagation(); if (activeIndex > 0) goTo(activeIndex - 1); }}
+          disabled={activeIndex === 0}
+          className="w-9 h-9 rounded-full border border-black/10 flex items-center justify-center text-ink/40 hover:text-ink hover:border-black/20 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        {people.map((p, idx) => (
+          <button
+            key={p.name}
+            onClick={e => { e.stopPropagation(); goTo(idx); }}
+            className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
+              idx === activeIndex
+                ? 'bg-ink text-white'
+                : 'bg-black/5 text-muted hover:bg-black/10'
+            }`}
+          >
+            {p.name}
+          </button>
+        ))}
+
+        <button
+          onClick={e => { e.stopPropagation(); if (activeIndex < people.length - 1) goTo(activeIndex + 1); }}
+          disabled={activeIndex === people.length - 1}
+          className="w-9 h-9 rounded-full border border-black/10 flex items-center justify-center text-ink/40 hover:text-ink hover:border-black/20 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
@@ -94,25 +243,71 @@ export default function Module1() {
   const [storyNote, setStoryNote] = useState('');
   const [currentSection, setCurrentSection] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [savedEntryId, setSavedEntryId] = useState<string | null>(null);
 
   const navigate = useNavigate();
-  const { addEntry } = useJournal();
+  const { addEntry, updateEntry } = useJournal();
+  const autosaveTimerRef = useRef<number | null>(null);
+  const lastSavedStoryNoteRef = useRef('');
 
-  const saveReflectionAndContinue = async () => {
-    setSaving(true);
+  const buildPayload = useCallback(() => {
     const allSignals = [...selectedSignals];
     if (customSignal.trim()) allSignals.push(customSignal.trim());
 
-    await addEntry({
+    return {
       moduleId: 'intro',
       moduleTitle: 'Meaning as Design',
       meaningRating: sliderValue,
       selectedSignals: allSignals,
       reflectionText: storyNote || undefined,
-    });
+    };
+  }, [selectedSignals, customSignal, sliderValue, storyNote]);
+
+  const saveReflectionAndContinue = async () => {
+    setSaving(true);
+
+    const payload = buildPayload();
+    if (savedEntryId) {
+      await updateEntry(savedEntryId, payload, { refreshFeedback: true });
+    } else {
+      const entry = await addEntry(payload);
+      setSavedEntryId(entry.id);
+    }
 
     navigate('/');
   };
+
+  useEffect(() => {
+    const trimmed = storyNote.trim();
+    if (!trimmed) return;
+
+    if (trimmed === lastSavedStoryNoteRef.current) return;
+
+    if (autosaveTimerRef.current) {
+      window.clearTimeout(autosaveTimerRef.current);
+    }
+
+    autosaveTimerRef.current = window.setTimeout(async () => {
+      const payload = buildPayload();
+      try {
+        if (savedEntryId) {
+          await updateEntry(savedEntryId, payload);
+        } else {
+          const entry = await addEntry(payload);
+          setSavedEntryId(entry.id);
+        }
+        lastSavedStoryNoteRef.current = trimmed;
+      } catch (err) {
+        console.error('Failed to autosave module reflection:', err);
+      }
+    }, 500);
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        window.clearTimeout(autosaveTimerRef.current);
+      }
+    };
+  }, [storyNote, savedEntryId, buildPayload, addEntry, updateEntry]);
 
   const toggleSignal = (signal: string) => {
     setSelectedSignals(prev =>
@@ -255,61 +450,9 @@ export default function Module1() {
             </p>
           </div>
 
-          {/* Flip Cards — Side by Side */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <FlipCard
-              initial="A"
-              name="Allison"
-              identityLine="Accountant · Married · Two kids"
-              secondaryLine="Stable job · Comfortable life"
-              frontQuote="My life was perfectly fine. But fine didn't feel like enough."
-              backSections={[
-                {
-                  header: 'What her life looked like',
-                  bullets: [
-                    'Accountant managing many small-business clients',
-                    'Stable income and comfortable family life',
-                    'Busy routine centered on work and home',
-                  ],
-                },
-                {
-                  header: 'What she started to feel',
-                  bullets: [
-                    'Life felt repetitive and emotionally flat',
-                    'She kept wondering why "fine" didn\'t feel like enough',
-                    'She felt guilty for being dissatisfied',
-                  ],
-                },
-              ]}
-              backQuote="I should feel grateful... but I keep wondering: What's missing?"
-            />
-
-            <FlipCard
-              initial="S"
-              name="Sonya"
-              identityLine="Software engineer · Big Tech"
-              secondaryLine="High salary · Product used by millions"
-              frontQuote="I know I should be happy... but it's just not working for me."
-              backSections={[
-                {
-                  header: 'What her life looked like',
-                  bullets: [
-                    'Computer science graduate at a major tech company',
-                    'Writing code used by millions of people',
-                    'Strong salary, security, and career status',
-                  ],
-                },
-                {
-                  header: 'What she started to feel',
-                  bullets: [
-                    'Her work felt strangely empty',
-                    'She wanted more meaning, not more money or status',
-                    'She felt uncomfortable admitting something was off',
-                  ],
-                },
-              ]}
-              backQuote="It feels like there should be more to work and life than this. I just don't know where to find it."
-            />
+          {/* Story Carousel */}
+          <div className="mb-8">
+            <StoryCarousel />
           </div>
 
           {/* Transition into wicked problems */}

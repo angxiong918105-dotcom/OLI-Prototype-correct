@@ -89,7 +89,7 @@ export default function Journal() {
                   <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-3">
                     A thought to carry with you
                   </p>
-                  <p className="text-sm text-ink leading-relaxed">
+                  <p className="text-sm text-ink leading-relaxed whitespace-pre-line">
                     {entry.aiResponse}
                   </p>
                 </div>

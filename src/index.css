@@ -16,12 +16,15 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Flip card */
-.flip-card {
-  perspective: 800px;
+/* Story card — fixed 720×420 flip card */
+.story-card-wrapper {
+  width: 720px;
+  height: 420px;
+  perspective: 1000px;
+  max-width: 100%;
 }
 
-.flip-card-inner {
+.story-card-inner {
   position: relative;
   width: 100%;
   height: 100%;
@@ -29,18 +32,36 @@ body {
   transform-style: preserve-3d;
 }
 
-.flip-card.flipped .flip-card-inner {
-  transform: rotateY(180deg);
-}
-
-.flip-card-front,
-.flip-card-back {
+.story-card-face {
   position: absolute;
   inset: 0;
+  padding: 32px;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: #fff;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.flip-card-back {
+.story-card-back {
   transform: rotateY(180deg);
+}
+
+/* Slide transitions */
+.story-slide-out-left {
+  animation: slideOutL 0.28s ease-out forwards;
+}
+.story-slide-out-right {
+  animation: slideOutR 0.28s ease-out forwards;
+}
+
+@keyframes slideOutL {
+  to { opacity: 0; transform: translateX(-30px); }
+}
+@keyframes slideOutR {
+  to { opacity: 0; transform: translateX(30px); }
 }

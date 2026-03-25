@@ -31,7 +31,7 @@ function useCurrentFocus(entries: { moduleId: string }[]) {
 
 function aiInsight(n: number): string {
   if (n === 0)
-    return "Your meaning design canvas is blank \u2014 every great design begins with a single observation. Start whenever you\u2019re ready.";
+    return "";
   if (n <= 2)
     return "You\u2019re beginning to notice patterns in your life. Each observation adds depth to your understanding of what creates meaning for you.";
   if (n <= 4)
@@ -46,6 +46,7 @@ function aiInsight(n: number): string {
 export default function Dashboard() {
   const { entries, latestEntry, hasEntries, loading, restart } = useJournal();
   const focus = useCurrentFocus(entries);
+  const insight = aiInsight(entries.length);
 
   if (loading) {
     return (
@@ -107,12 +108,12 @@ export default function Dashboard() {
       </div>
 
       {/* ── AI Insight ────────────────────────────────────────── */}
-      <div className="flex items-start gap-3 px-6 py-5 rounded-2xl bg-sage/20 border border-sage/30 mb-10">
-        <Sparkles className="w-4 h-4 text-[#6B8F6E] mt-0.5 shrink-0" />
-        <p className="text-sm text-ink/70 leading-relaxed italic">
-          {aiInsight(entries.length)}
-        </p>
-      </div>
+      {insight && (
+        <div className="flex items-start gap-3 px-6 py-5 rounded-2xl bg-sage/20 border border-sage/30 mb-10">
+          <Sparkles className="w-4 h-4 text-[#6B8F6E] mt-0.5 shrink-0" />
+          <p className="text-sm text-ink/70 leading-relaxed italic">{insight}</p>
+        </div>
+      )}
 
       {/* ── OLM Dashboard (4 modules) ────────────────────────── */}
       <OLMDashboard entries={entries} />
@@ -202,7 +203,7 @@ export default function Dashboard() {
                 <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-2">
                   A thought to carry with you
                 </p>
-                <p className="text-sm text-ink leading-relaxed">
+                <p className="text-sm text-ink leading-relaxed whitespace-pre-line">
                   {latestEntry.aiResponse}
                 </p>
               </div>

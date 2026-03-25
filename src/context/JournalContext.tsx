@@ -21,6 +21,11 @@ type JournalContextType = {
   entries: JournalEntry[];
   latestEntry: JournalEntry | null;
   addEntry: (payload: ReflectionPayload) => Promise<JournalEntry>;
+  updateEntry: (
+    entryId: string,
+    payload: ReflectionPayload,
+    options?: { refreshFeedback?: boolean },
+  ) => Promise<JournalEntry>;
   hasEntries: boolean;
   loading: boolean;
   restart: () => Promise<void>;
@@ -74,15 +79,19 @@ export function JournalProvider({ children }: { children: ReactNode }) {
 
       const id = crypto.randomUUID();
       const createdAt = new Date().toISOString();
+      const hasReflectionText = Boolean(payload.reflectionText?.trim());
 
       // Generate AI feedback
       let aiResponse: string | undefined;
-      try {
-        aiResponse = await generateReflectionFeedback(payload);
-      } catch (err) {
-        console.error("Failed to generate AI feedback:", err);
-        aiResponse =
-          "Your reflection has been saved. A thought will appear here once feedback is available.";
+      if (hasReflectionText) {
+        try {
+          aiResponse = await generateReflectionFeedback(payload);
+          console.info('Stored feedback text:', aiResponse);
+        } catch (err) {
+          console.error("Failed to generate AI feedback:", err);
+          aiResponse =
+            "Your reflection has been saved. A thought will appear here once feedback is available.";
+        }
       }
 
       const entry: JournalEntry = {
@@ -118,6 +127,58 @@ export function JournalProvider({ children }: { children: ReactNode }) {
     [uid, progress.completedModules],
   );
 
+  const updateEntry = useCallback(
+    async (
+      entryId: string,
+      payload: ReflectionPayload,
+      options?: { refreshFeedback?: boolean },
+    ): Promise<JournalEntry> => {
+      if (!uid) throw new Error("User not authenticated");
+      const hasReflectionText = Boolean(payload.reflectionText?.trim());
+      const shouldRefreshFeedback = options?.refreshFeedback ?? false;
+
+      let aiResponse: string | undefined;
+      if (hasReflectionText && shouldRefreshFeedback) {
+        try {
+          aiResponse = await generateReflectionFeedback(payload);
+          console.info("Updated feedback text:", aiResponse);
+        } catch (err) {
+          console.error("Failed to regenerate AI feedback:", err);
+          aiResponse =
+            "Your reflection has been saved. A thought will appear here once feedback is available.";
+        }
+      }
+
+      let updatedEntry: JournalEntry | null = null;
+      setEntries((prev) => {
+        const next = prev.map((entry) => {
+          if (entry.id !== entryId) return entry;
+          updatedEntry = {
+            ...entry,
+            moduleId: payload.moduleId,
+            moduleTitle: payload.moduleTitle,
+            meaningRating: payload.meaningRating,
+            selectedSignals: payload.selectedSignals,
+            reflectionText: payload.reflectionText,
+            aiResponse: hasReflectionText
+              ? (shouldRefreshFeedback ? aiResponse : entry.aiResponse)
+              : undefined,
+          };
+          return updatedEntry;
+        });
+        return next;
+      });
+
+      if (!updatedEntry) {
+        throw new Error("Entry not found");
+      }
+
+      saveResponse(uid, updatedEntry).catch(console.error);
+      return updatedEntry;
+    },
+    [uid],
+  );
+
   const restart = useCallback(async () => {
     if (!uid) return;
 
@@ -141,6 +202,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
         entries,
         latestEntry,
         addEntry,
+        updateEntry,
         hasEntries: entries.length > 0,
         loading,
         restart,
