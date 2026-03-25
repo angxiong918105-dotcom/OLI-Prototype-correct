@@ -79,19 +79,16 @@ export function JournalProvider({ children }: { children: ReactNode }) {
 
       const id = crypto.randomUUID();
       const createdAt = new Date().toISOString();
-      const hasReflectionText = Boolean(payload.reflectionText?.trim());
 
       // Generate AI feedback
       let aiResponse: string | undefined;
-      if (hasReflectionText) {
-        try {
-          aiResponse = await generateReflectionFeedback(payload);
-          console.info('Stored feedback text:', aiResponse);
-        } catch (err) {
-          console.error("Failed to generate AI feedback:", err);
-          aiResponse =
-            "Your reflection has been saved. A thought will appear here once feedback is available.";
-        }
+      try {
+        aiResponse = await generateReflectionFeedback(payload);
+        console.info('Stored feedback text:', aiResponse);
+      } catch (err) {
+        console.error("Failed to generate AI feedback:", err);
+        aiResponse =
+          "Your reflection has been saved. A thought will appear here once feedback is available.";
       }
 
       const entry: JournalEntry = {
@@ -134,11 +131,10 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       options?: { refreshFeedback?: boolean },
     ): Promise<JournalEntry> => {
       if (!uid) throw new Error("User not authenticated");
-      const hasReflectionText = Boolean(payload.reflectionText?.trim());
       const shouldRefreshFeedback = options?.refreshFeedback ?? false;
 
       let aiResponse: string | undefined;
-      if (hasReflectionText && shouldRefreshFeedback) {
+      if (shouldRefreshFeedback) {
         try {
           aiResponse = await generateReflectionFeedback(payload);
           console.info("Updated feedback text:", aiResponse);
@@ -160,9 +156,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
             meaningRating: payload.meaningRating,
             selectedSignals: payload.selectedSignals,
             reflectionText: payload.reflectionText,
-            aiResponse: hasReflectionText
-              ? (shouldRefreshFeedback ? aiResponse : entry.aiResponse)
-              : undefined,
+            aiResponse: shouldRefreshFeedback ? aiResponse : entry.aiResponse,
           };
           return updatedEntry;
         });

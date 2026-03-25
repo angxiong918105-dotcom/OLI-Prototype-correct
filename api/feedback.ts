@@ -1,15 +1,3 @@
-import dotenv from 'dotenv';
-import express from 'express';
-
-dotenv.config({ path: '.env.local' });
-dotenv.config();
-
-const app = express();
-app.use(express.json());
-
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY?.trim();
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-
 type FeedbackPayload = {
   summary: string;
   pattern: string;
@@ -56,8 +44,11 @@ function parseFeedbackPayload(raw: string): FeedbackPayload | null {
 }
 
 async function requestOpenAI(systemPrompt: string, userPrompt: string): Promise<string> {
+  const OPENAI_API_KEY = process.env.OPENAI_API_KEY?.trim();
+  const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+
   if (!OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY is not configured');
+    throw new ProviderError(500, 'No API key configured. Set OPENAI_API_KEY.');
   }
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -98,42 +89,13 @@ async function requestOpenAI(systemPrompt: string, userPrompt: string): Promise<
   return data.choices?.[0]?.message?.content?.trim() || '';
 }
 
-app.get('/api/health', (_req, res) => {
-  res.json({ ok: true });
-});
-
-app.post('/api/reflect', async (req, res) => {
-  if (!OPENAI_API_KEY) {
-    return res.status(500).json({ error: 'No API key configured. Set OPENAI_API_KEY.' });
+export default async function handler(req: any, res: any) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { systemPrompt, userPrompt } = req.body;
-
-  if (!systemPrompt || !userPrompt) {
-    return res.status(400).json({ error: 'Missing systemPrompt or userPrompt' });
-  }
-
-  try {
-    const message = await requestOpenAI(systemPrompt, userPrompt);
-
-    if (!message) {
-      return res.status(502).json({ error: 'Empty response from Gemini' });
-    }
-
-    return res.json({ message });
-  } catch (err) {
-    console.error('Error calling OpenAI:', err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.post('/api/feedback', async (req, res) => {
-  if (!OPENAI_API_KEY) {
-    return res.status(500).json({ error: 'No API key configured. Set OPENAI_API_KEY.' });
-  }
-
-  const { journalEntry } = req.body;
-  if (typeof journalEntry !== 'string' || !journalEntry.trim()) {
+  const journalEntry = typeof req.body?.journalEntry === 'string' ? req.body.journalEntry : '';
+  if (!journalEntry.trim()) {
     return res.status(400).json({ error: 'Missing or invalid journalEntry' });
   }
 
@@ -209,19 +171,14 @@ Return STRICT JSON with exactly these keys:
     }
 
     console.info('/api/feedback response', parsed);
-    return res.json(parsed);
+    return res.status(200).json(parsed);
   } catch (err) {
     if (err instanceof ProviderError) {
       console.error('/api/feedback provider error:', err.message);
       return res.status(err.status).json({ error: err.message });
     }
+
     console.error('Error generating feedback:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
-});
-
-const PORT = process.env.PORT || 3001;
-
-app.listen(PORT, () => {
-  console.log(`Reflection API server running on port ${PORT}`);
-});
+}

@@ -1,29 +1,9 @@
 import type { FeedbackResponse, ReflectionPayload } from '../types/journal';
 
-function buildUserPrompt(payload: ReflectionPayload): string {
-  const parts: string[] = [];
-
-  if (payload.moduleTitle) {
-    parts.push(`Module: ${payload.moduleTitle}`);
-  }
-
-  if (payload.meaningRating !== undefined) {
-    parts.push(`Current sense of meaning and purpose (0-100): ${payload.meaningRating}`);
-  }
-
-  if (payload.selectedSignals && payload.selectedSignals.length > 0) {
-    parts.push(`Signals they noticed:\n${payload.selectedSignals.map(s => `- ${s}`).join('\n')}`);
-  }
-
-  if (payload.reflectionText) {
-    parts.push(`Their reflection:\n"${payload.reflectionText}"`);
-  }
-
-  return parts.join('\n\n');
-}
-
 export async function generateReflectionFeedback(payload: ReflectionPayload): Promise<string> {
-  const sourceText = payload.reflectionText?.trim() || buildUserPrompt(payload);
+  const sourceText = payload.reflectionText?.trim() ||
+    'The learner shared short signal notes and wants reflective coaching. Offer a gentle pattern insight, one perspective shift, and one small next step.';
+
   const response = await fetch('/api/feedback', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -53,5 +33,9 @@ export async function generateReflectionFeedback(payload: ReflectionPayload): Pr
     next_step: data.next_step,
   });
 
-  return `Summary: ${data.summary}\nPattern: ${data.pattern}\nNext step: ${data.next_step}`;
+  const feedbackLines = [data.summary, data.pattern, data.next_step]
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return feedbackLines.join('\n');
 }
