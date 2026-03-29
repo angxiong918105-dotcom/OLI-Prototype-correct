@@ -16,12 +16,27 @@ body {
   font-family: var(--font-sans);
 }
 
+<<<<<<< HEAD
 /* Story card — fixed 720×420 flip card */
 .story-card-wrapper {
   width: 720px;
   height: 420px;
   perspective: 1000px;
   max-width: 100%;
+=======
+/* Hide scrollbar */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Flip card */
+.flip-card {
+  perspective: 800px;
+>>>>>>> 28e02f2 (Module 2)
 }
 
 .story-card-inner {
