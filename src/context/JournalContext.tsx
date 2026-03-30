@@ -6,8 +6,12 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import type { JournalEntry, ReflectionPayload } from "../types/journal";
+import type { JournalEntry, PatternInsight, ReflectionPayload } from "../types/journal";
 import { generateReflectionFeedback } from "../lib/generateFeedback";
+import {
+  generatePatternInsight,
+  hasEnoughForPattern,
+} from "../lib/generatePatternInsight";
 import {
   ensureAuth,
   loadUserState,
@@ -31,6 +35,11 @@ type JournalContextType = {
   error: string | null;
   restart: () => Promise<void>;
   progress: UserProgress;
+  // Cross-entry pattern insight
+  patternInsight: PatternInsight | null;
+  patternInsightLoading: boolean;
+  hasEnoughForPattern: boolean;
+  refreshPatternInsight: () => Promise<void>;
 };
 
 const JournalContext = createContext<JournalContextType | null>(null);
@@ -47,6 +56,8 @@ export function JournalProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [uid, setUid] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [patternInsight, setPatternInsight] = useState<PatternInsight | null>(null);
+  const [patternInsightLoading, setPatternInsightLoading] = useState(false);
 
   // On mount: authenticate & load Firestore state
   useEffect(() => {
@@ -129,7 +140,8 @@ export function JournalProvider({ children }: { children: ReactNode }) {
           saveProgress(uid, newProgress),
         ]);
 
-        setEntries((prev) => [...prev, entry]);
+        const updatedEntries = [...entries, entry];
+        setEntries(updatedEntries);
         setProgress((prev) => ({ ...prev, ...newProgress }));
 
         return entry;
@@ -141,7 +153,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
         throw new Error(message);
       }
     },
-    [uid, progress.completedModules],
+    [uid, entries, progress.completedModules],
   );
 
   const updateEntry = useCallback(
@@ -205,6 +217,35 @@ export function JournalProvider({ children }: { children: ReactNode }) {
     [uid, entries],
   );
 
+  const refreshPatternInsight = useCallback(
+    async (currentEntries?: JournalEntry[]) => {
+      const target = currentEntries ?? entries;
+      if (!hasEnoughForPattern(target)) return;
+
+      setPatternInsightLoading(true);
+      try {
+        const insight = await generatePatternInsight(target);
+        setPatternInsight(insight);
+      } catch (err) {
+        console.error("Failed to generate pattern insight:", err);
+        // Non-fatal — pattern insight is additive, not critical
+      } finally {
+        setPatternInsightLoading(false);
+      }
+    },
+    [entries],
+  );
+
+  // Auto-generate pattern insight when entries cross the threshold for the first time.
+  // Uses entries.length as the trigger so we don't re-run on every unrelated render.
+  useEffect(() => {
+    if (loading) return; // Wait until initial load is complete
+    if (!hasEnoughForPattern(entries)) return;
+    if (patternInsight) return; // Already have one; user can refresh manually
+    refreshPatternInsight(entries);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries.length, loading]);
+
   const restart = useCallback(async () => {
     if (!uid) {
       setError("Session is not ready yet. Please try again in a moment.");
@@ -217,6 +258,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       await restartUserProgress(uid);
       setEntries([]);
       setProgress({ ...DEFAULT_PROGRESS });
+      setPatternInsight(null);
     } catch (err) {
       console.error("Failed to restart progress:", err);
       setError("We could not restart progress right now. Please try again.");
@@ -239,6 +281,10 @@ export function JournalProvider({ children }: { children: ReactNode }) {
         error,
         restart,
         progress,
+        patternInsight,
+        patternInsightLoading,
+        hasEnoughForPattern: hasEnoughForPattern(entries),
+        refreshPatternInsight,
       }}
     >
       {children}

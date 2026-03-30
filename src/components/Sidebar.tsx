@@ -16,7 +16,6 @@ export default function Sidebar() {
       <div className="mb-8 px-6">
         <Link to="/" className="block">
           <h1 className="font-serif text-xl font-medium tracking-tight text-ink">Meaning by Design</h1>
-          <p className="text-xs text-muted mt-1">A 7-day micro-learning challenge</p>
         </Link>
       </div>
 
