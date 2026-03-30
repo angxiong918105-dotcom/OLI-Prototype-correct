@@ -11,7 +11,7 @@ import { generateReflectionFeedback } from "../lib/generateFeedback";
 import {
   ensureAuth,
   loadUserState,
-  saveResponse,
+  saveJournalEntry,
   saveProgress,
   restartUserProgress,
   type UserProgress,
@@ -28,6 +28,7 @@ type JournalContextType = {
   ) => Promise<JournalEntry>;
   hasEntries: boolean;
   loading: boolean;
+  error: string | null;
   restart: () => Promise<void>;
   progress: UserProgress;
 };
@@ -45,12 +46,14 @@ export function JournalProvider({ children }: { children: ReactNode }) {
   const [progress, setProgress] = useState<UserProgress>(DEFAULT_PROGRESS);
   const [loading, setLoading] = useState(true);
   const [uid, setUid] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // On mount: authenticate & load Firestore state
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
+      setError(null);
       try {
         const user = await ensureAuth();
         if (cancelled) return;
@@ -63,6 +66,9 @@ export function JournalProvider({ children }: { children: ReactNode }) {
         setProgress(state.progress);
       } catch (err) {
         console.error("Failed to initialise user state:", err);
+        setError(
+          "Unable to initialize your secure session. Please refresh and try again.",
+        );
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -75,7 +81,13 @@ export function JournalProvider({ children }: { children: ReactNode }) {
 
   const addEntry = useCallback(
     async (payload: ReflectionPayload): Promise<JournalEntry> => {
-      if (!uid) throw new Error("User not authenticated");
+      if (!uid) {
+        const message = "Session is not ready yet. Please try again in a moment.";
+        setError(message);
+        throw new Error(message);
+      }
+
+      setError(null);
 
       const id = crypto.randomUUID();
       const createdAt = new Date().toISOString();
@@ -103,9 +115,6 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       };
 
       // Update local state immediately
-      setEntries((prev) => [...prev, entry]);
-
-      // Update completed modules
       const newCompleted = Array.from(
         new Set([...progress.completedModules, payload.moduleId]),
       );
@@ -113,13 +122,24 @@ export function JournalProvider({ children }: { children: ReactNode }) {
         completedModules: newCompleted,
         currentModule: payload.moduleId,
       };
-      setProgress((prev) => ({ ...prev, ...newProgress }));
 
-      // Persist to Firestore (fire and forget with error logging)
-      saveResponse(uid, entry).catch(console.error);
-      saveProgress(uid, newProgress).catch(console.error);
+      try {
+        await Promise.all([
+          saveJournalEntry(uid, entry),
+          saveProgress(uid, newProgress),
+        ]);
 
-      return entry;
+        setEntries((prev) => [...prev, entry]);
+        setProgress((prev) => ({ ...prev, ...newProgress }));
+
+        return entry;
+      } catch (err) {
+        console.error("Failed to save entry:", err);
+        const message =
+          "We could not save your reflection right now. Please try again.";
+        setError(message);
+        throw new Error(message);
+      }
     },
     [uid, progress.completedModules],
   );
@@ -130,7 +150,13 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       payload: ReflectionPayload,
       options?: { refreshFeedback?: boolean },
     ): Promise<JournalEntry> => {
-      if (!uid) throw new Error("User not authenticated");
+      if (!uid) {
+        const message = "Session is not ready yet. Please try again in a moment.";
+        setError(message);
+        throw new Error(message);
+      }
+
+      setError(null);
       const shouldRefreshFeedback = options?.refreshFeedback ?? false;
 
       let aiResponse: string | undefined;
@@ -145,44 +171,55 @@ export function JournalProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      let updatedEntry: JournalEntry | null = null;
-      setEntries((prev) => {
-        const next = prev.map((entry) => {
-          if (entry.id !== entryId) return entry;
-          updatedEntry = {
-            ...entry,
-            moduleId: payload.moduleId,
-            moduleTitle: payload.moduleTitle,
-            meaningRating: payload.meaningRating,
-            selectedSignals: payload.selectedSignals,
-            reflectionText: payload.reflectionText,
-            aiResponse: shouldRefreshFeedback ? aiResponse : entry.aiResponse,
-          };
-          return updatedEntry;
-        });
-        return next;
-      });
-
-      if (!updatedEntry) {
+      const currentEntry = entries.find((entry) => entry.id === entryId);
+      if (!currentEntry) {
         throw new Error("Entry not found");
       }
 
-      saveResponse(uid, updatedEntry).catch(console.error);
-      return updatedEntry;
+      const updatedEntry: JournalEntry = {
+        ...currentEntry,
+        moduleId: payload.moduleId,
+        moduleTitle: payload.moduleTitle,
+        meaningRating: payload.meaningRating,
+        selectedSignals: payload.selectedSignals,
+        reflectionText: payload.reflectionText,
+        aiResponse: shouldRefreshFeedback ? aiResponse : currentEntry.aiResponse,
+      };
+
+      try {
+        await saveJournalEntry(uid, updatedEntry);
+
+        setEntries((prev) =>
+          prev.map((entry) => (entry.id === entryId ? updatedEntry : entry)),
+        );
+
+        return updatedEntry;
+      } catch (err) {
+        console.error("Failed to update entry:", err);
+        const message =
+          "We could not update your reflection right now. Please try again.";
+        setError(message);
+        throw new Error(message);
+      }
     },
-    [uid],
+    [uid, entries],
   );
 
   const restart = useCallback(async () => {
-    if (!uid) return;
+    if (!uid) {
+      setError("Session is not ready yet. Please try again in a moment.");
+      return;
+    }
 
     setLoading(true);
+    setError(null);
     try {
       await restartUserProgress(uid);
       setEntries([]);
       setProgress({ ...DEFAULT_PROGRESS });
     } catch (err) {
       console.error("Failed to restart progress:", err);
+      setError("We could not restart progress right now. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -199,6 +236,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
         updateEntry,
         hasEntries: entries.length > 0,
         loading,
+        error,
         restart,
         progress,
       }}
