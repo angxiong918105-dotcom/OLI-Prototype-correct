@@ -2,6 +2,7 @@ import { useJournal } from '../context/JournalContext';
 import { BookOpen, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PATTERN_MIN_ENTRIES, PATTERN_MIN_MODULES } from '../lib/generatePatternInsight';
+import FeedbackBlock from '../components/FeedbackBlock';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -143,14 +144,7 @@ function EntryCard({ entry }: { entry: ReturnType<typeof useJournal>['entries'][
 
       {/* Single-entry AI response */}
       {entry.aiResponse && (
-        <div className="pt-5 border-t border-black/5">
-          <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-3">
-            From this entry
-          </p>
-          <p className="text-sm text-ink leading-relaxed whitespace-pre-line">
-            {entry.aiResponse}
-          </p>
-        </div>
+        <FeedbackBlock text={entry.aiResponse} />
       )}
 
       {/* Meaning rating */}

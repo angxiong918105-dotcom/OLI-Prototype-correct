@@ -125,35 +125,35 @@ function deriveSuggestedNextStep(entries: JournalEntry[]) {
   if (!ids.has('observe'))
     return {
       message:
-        'You\'ve completed the intro. Your next step is to practice pattern observation — identifying what gives you energy vs. what drains it in daily life.',
+        'You\'ve completed the intro. Next is Module 3: pattern observation — identifying what gives you energy vs. what drains it in daily life.',
       linkTo: '/reflection/observe',
       linkLabel: 'Begin Observation Exercise',
     };
   if (!ids.has('branching'))
     return {
       message:
-        `You have ${entries.filter(e => e.selectedSignals && e.selectedSignals.length > 0).reduce((s, e) => s + (e.selectedSignals?.length ?? 0), 0)} signals recorded. Based on your observations, the next step is choosing between the flow path and the coherence path.`,
+        `You have ${entries.filter(e => e.selectedSignals && e.selectedSignals.length > 0).reduce((s, e) => s + (e.selectedSignals?.length ?? 0), 0)} signals recorded. Next is Module 4: choosing between the flow path and the coherence path.`,
       linkTo: '/module/branching',
       linkLabel: 'Choose Your Direction',
     };
   if (!ids.has('ideate'))
     return {
       message:
-        'Direction selected. Now translate your choice into a concrete, small-scale experiment you can run this week. This is where learning becomes action.',
+        'Direction selected. Module 5 is about translating your choice into a concrete, small-scale experiment you can run this week.',
       linkTo: '/module/ideate',
       linkLabel: 'Design Your Experiment',
     };
   if (!ids.has('prototype'))
     return {
       message:
-        'Your experiment design is ready. The next step is to test it — gather real evidence about what shifts your sense of meaning.',
+        'Your experiment design is ready. Module 6 is about testing it — gathering real evidence about what shifts your sense of meaning.',
       linkTo: '/module/prototype',
       linkLabel: 'Run Your Prototype',
     };
   if (!ids.has('test'))
     return {
       message:
-        `You've run your experiment. With ${reflections} reflection${reflections !== 1 ? 's' : ''} so far, a synthesis reflection will help you consolidate what you've learned.`,
+        `You've run your experiment. With ${reflections} reflection${reflections !== 1 ? 's' : ''} so far, Module 7 will help you consolidate what you've learned into a forward plan.`,
       linkTo: '/reflection/test',
       linkLabel: 'Write Synthesis Reflection',
     };
@@ -173,7 +173,7 @@ function deriveOverallSummary(entries: JournalEntry[]): string {
   if (ids.size === 0)
     return 'You haven\'t started yet — your learning journey begins with the first observation.';
   if (ids.size === 1)
-    return 'You\'ve taken your first step. Early engagement detected — keep building momentum.';
+    return 'You\'ve taken your first step. Keep building momentum through the modules.';
   if (ids.size <= 3)
     return `You\'re actively exploring — ${ids.size} modules visited, ${reflections} reflection${reflections !== 1 ? 's' : ''} recorded so far.`;
   if (ids.size <= 5)
@@ -194,7 +194,7 @@ function Card({
 }) {
   return (
     <div
-      className={`p-6 rounded-2xl border border-black/5 bg-white/80 ${className}`}
+      className={`p-6 rounded-2xl border border-black/[0.08] bg-white/90 shadow-sm ${className}`}
     >
       {children}
     </div>
@@ -221,7 +221,7 @@ const STAGE_BAR_BG: Record<ConceptStage, string> = {
 };
 
 const STAGE_TEXT: Record<ConceptStage, string> = {
-  'Not Started': 'text-muted/40',
+  'Not Started': 'text-muted/55',
   Emerging: 'text-[#7DA67F]',
   Developing: 'text-[#5A7D5C]',
   Applying: 'text-[#4A6B4C]',
@@ -263,12 +263,12 @@ function ConceptMastery({ entries }: { entries: JournalEntry[] }) {
       <div className="flex items-start justify-between">
         <div>
           <Label>Concept Mastery</Label>
-          <p className="text-[11px] text-muted/50 mt-1">
+          <p className="text-[11px] text-muted/60 mt-1">
             Understanding depth across core concepts
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] text-muted/40 leading-tight">
+          <p className="text-[10px] text-muted/55 leading-tight">
             {mastered > 0 && <span className="text-[#5A7D5C]">{mastered} applying</span>}
             {mastered > 0 && inProgress > 0 && <span> · </span>}
             {inProgress > 0 && <span>{inProgress} in progress</span>}
@@ -282,7 +282,7 @@ function ConceptMastery({ entries }: { entries: JournalEntry[] }) {
           <div key={c.name}>
             <div className="flex items-baseline justify-between mb-1">
               <p className="text-[13px] text-ink">{c.name}</p>
-              <p className={`text-[10px] tabular-nums ${c.progress > 0 ? 'text-muted/50' : 'text-muted/30'}`}>
+              <p className={`text-[10px] tabular-nums ${c.progress > 0 ? 'text-muted/60' : 'text-muted/55'}`}>
                 {c.progress}%
               </p>
             </div>
@@ -306,28 +306,28 @@ function LearningActivity({ entries }: { entries: JournalEntry[] }) {
       total: a.totalModules,
       label: 'Modules completed',
       icon: BookOpen,
-      color: a.modulesCompleted > 0 ? 'text-[#6B8F6E]' : 'text-muted/30',
+      color: a.modulesCompleted > 0 ? 'text-[#6B8F6E]' : 'text-muted/55',
     },
     {
       value: a.exercisesCompleted,
       total: undefined,
       label: 'Exercises submitted',
       icon: Circle,
-      color: a.exercisesCompleted > 0 ? 'text-[#6B8F6E]' : 'text-muted/30',
+      color: a.exercisesCompleted > 0 ? 'text-[#6B8F6E]' : 'text-muted/55',
     },
     {
       value: a.reflectionsWritten,
       total: undefined,
       label: 'Reflections written',
       icon: Brain,
-      color: a.reflectionsWritten > 0 ? 'text-[#6B8F6E]' : 'text-muted/30',
+      color: a.reflectionsWritten > 0 ? 'text-[#6B8F6E]' : 'text-muted/55',
     },
   ];
 
   return (
     <Card>
       <Label>Learning Activity</Label>
-      <p className="text-[11px] text-muted/50 mt-1">
+      <p className="text-[11px] text-muted/60 mt-1">
         Evidence of engagement across the course
       </p>
 
@@ -341,10 +341,10 @@ function LearningActivity({ entries }: { entries: JournalEntry[] }) {
               <p className="text-[13px] text-ink leading-tight">
                 <span className="font-semibold tabular-nums">{item.value}</span>
                 {item.total !== undefined && (
-                  <span className="text-muted/40 font-normal"> / {item.total}</span>
+                  <span className="text-muted/55 font-normal"> / {item.total}</span>
                 )}
               </p>
-              <p className="text-[10px] text-muted/45 mt-0.5">{item.label}</p>
+              <p className="text-[10px] text-muted/55 mt-0.5">{item.label}</p>
             </div>
             {item.value > 0 && (
               <div className="w-1.5 h-1.5 rounded-full bg-[#6B8F6E]/60" />
@@ -369,12 +369,12 @@ function MeaningExperimentEvidence({ entries }: { entries: JournalEntry[] }) {
       <div className="flex items-start justify-between">
         <div>
           <Label>Meaning Experiment Evidence</Label>
-          <p className="text-[11px] text-muted/50 mt-1">
+          <p className="text-[11px] text-muted/60 mt-1">
             Your learning journey: observe → choose → experiment → reflect
           </p>
         </div>
-        <span className="text-[10px] text-muted/40 tabular-nums shrink-0">
-          {completedCount}/{stages.length} steps
+        <span className="text-[10px] text-muted/55 tabular-nums shrink-0">
+          {completedCount} of {stages.length} modules
         </span>
       </div>
 
@@ -404,7 +404,7 @@ function MeaningExperimentEvidence({ entries }: { entries: JournalEntry[] }) {
                   <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                 ) : (
                   <span className={`text-[8px] font-bold ${
-                    i === completedCount ? 'text-[#6B8F6E]/60' : 'text-muted/25'
+                    i === completedCount ? 'text-[#6B8F6E]/60' : 'text-muted/55'
                   }`}>{i + 1}</span>
                 )}
               </div>
@@ -413,7 +413,7 @@ function MeaningExperimentEvidence({ entries }: { entries: JournalEntry[] }) {
               <div className="flex-1 min-w-0">
                 <p
                   className={`text-[13px] leading-snug font-medium ${
-                    s.completed ? 'text-ink' : i === completedCount ? 'text-ink/70' : 'text-muted/40'
+                    s.completed ? 'text-ink' : i === completedCount ? 'text-ink/70' : 'text-muted/55'
                   }`}
                 >
                   {s.label}
@@ -423,8 +423,8 @@ function MeaningExperimentEvidence({ entries }: { entries: JournalEntry[] }) {
                     s.evidence
                       ? 'text-[#6B8F6E] font-medium'
                       : i === completedCount
-                        ? 'text-muted/50'
-                        : 'text-muted/30'
+                        ? 'text-muted/60'
+                        : 'text-muted/55'
                   }`}
                 >
                   {s.evidence ?? (s.completed ? s.description : `Not yet — ${s.description.toLowerCase()}`)}
@@ -458,7 +458,7 @@ function SuggestedNextStep({ entries }: { entries: JournalEntry[] }) {
         <div className="w-5 h-5 rounded-md bg-[#6B8F6E]/10 flex items-center justify-center">
           <Sparkles className="w-3 h-3 text-[#6B8F6E]" />
         </div>
-        <Label>AI-Recommended Next Step</Label>
+        <Label>Recommended Next Module</Label>
       </div>
 
       <p className="text-[13px] text-ink/80 leading-relaxed mt-3">

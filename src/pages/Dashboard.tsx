@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useJournal } from '../context/JournalContext';
 import { modules } from '../data/modules';
 import OLMDashboard from '../components/OLMDashboard';
+import FeedbackBlock from '../components/FeedbackBlock';
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -65,28 +66,14 @@ export default function Dashboard() {
       </p>
 
       {/* ── Current Focus ─────────────────────────────────────── */}
-      <div className="p-8 rounded-2xl border border-black/5 bg-white shadow-sm mb-6">
-        <div className="flex items-start justify-between flex-wrap gap-4">
-          <div>
-            <span className="text-[10px] font-semibold text-muted uppercase tracking-widest">
-              {focus.allDone ? 'Journey Complete' : 'Current Focus'}
-            </span>
-            <h2 className="font-serif text-2xl text-ink mt-1">
-              {focus.module.title}
-            </h2>
-            <p className="text-sm text-muted/70 mt-1">{focus.module.desc}</p>
-          </div>
-
-          {!focus.allDone && (
-            <Link
-              to={focus.module.path}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-all hover:-translate-y-0.5 hover:shadow-md shrink-0"
-            >
-              Continue
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          )}
-        </div>
+      <div className="p-8 rounded-2xl border border-black/[0.08] bg-white shadow-sm mb-6">
+        <span className="text-[10px] font-semibold text-muted uppercase tracking-widest">
+          {focus.allDone ? 'Journey Complete' : 'Current Focus'}
+        </span>
+        <h2 className="font-serif text-2xl text-ink mt-1">
+          {focus.module.title}
+        </h2>
+        <p className="text-sm text-muted mt-1">{focus.module.desc}</p>
 
         {/* progress bar */}
         <div className="mt-6">
@@ -105,6 +92,22 @@ export default function Dashboard() {
             />
           </div>
         </div>
+
+        {/* Primary CTA */}
+        {!focus.allDone && (
+          <div className="mt-6 pt-5 border-t border-black/[0.05] flex items-center justify-between">
+            <p className="text-xs text-muted italic">
+              {!hasEntries ? 'Start here' : 'Continue where you left off'}
+            </p>
+            <Link
+              to={focus.module.path}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-all hover:-translate-y-0.5 hover:shadow-md shrink-0"
+            >
+              {!hasEntries ? 'Start Module 1' : `Continue · Module ${focus.module.number}`}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* ── AI Insight ────────────────────────────────────────── */}
@@ -131,7 +134,7 @@ export default function Dashboard() {
       )}
 
       {/* ── Recent Insights / Journal ─────────────────────────── */}
-      <div className="mt-10 p-8 rounded-2xl border border-black/5 bg-white shadow-sm">
+      <div className="mt-10 p-8 rounded-2xl border border-black/[0.08] bg-white shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <span className="text-[10px] font-semibold text-muted uppercase tracking-widest">
             Recent Insights
@@ -199,14 +202,7 @@ export default function Dashboard() {
             )}
 
             {latestEntry.aiResponse && (
-              <div className="pt-5 border-t border-black/5">
-                <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-2">
-                  A thought to carry with you
-                </p>
-                <p className="text-sm text-ink leading-relaxed whitespace-pre-line">
-                  {latestEntry.aiResponse}
-                </p>
-              </div>
+              <FeedbackBlock text={latestEntry.aiResponse} />
             )}
           </div>
         )}

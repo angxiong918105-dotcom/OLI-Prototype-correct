@@ -348,17 +348,18 @@ export default function Module1() {
           </button>
         ))}
         <span className="text-xs text-muted ml-2">
-          {currentSection + 1} / {sections.length}
+          Section {currentSection + 1} of {sections.length}
         </span>
       </div>
 
       {/* SECTION 1 — Check-In */}
       {currentSection === 0 && (
         <div className="animate-in fade-in">
-          <div className="p-8 rounded-2xl border border-black/5 bg-white shadow-sm">
-            <h2 className="font-serif text-2xl text-ink mb-10">
+          <div className="p-8 rounded-2xl border border-black/[0.08] bg-white shadow-sm">
+            <h2 className="font-serif text-2xl text-ink mb-2">
               How would you rate your current sense of meaning and purpose?
             </h2>
+            <p className="text-xs text-muted italic mb-8">Drag the slider to where you are today, then mark any signals that feel familiar.</p>
 
             <div className="mb-4">
               <input
@@ -406,18 +407,18 @@ export default function Module1() {
                   </button>
                 ))}
 
-                <div className={`flex items-center gap-3 px-5 py-4 rounded-xl border transition-all ${
+                <div className={`flex items-center gap-3 px-5 py-4 rounded-xl border-l-2 border transition-all ${
                   customSignal
-                    ? 'border-ink bg-ink/5'
-                    : 'border-black/5 bg-white/50'
+                    ? 'border-l-ink border-ink bg-ink/5'
+                    : 'border-l-black/10 border-black/5 bg-black/[0.015]'
                 }`}>
                   <span className="text-sm text-muted shrink-0">Other:</span>
                   <input
                     type="text"
                     value={customSignal}
                     onChange={e => setCustomSignal(e.target.value)}
-                    placeholder="Type your own..."
-                    className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-black/20"
+                    placeholder="Write your own signal…"
+                    className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-black/20 placeholder:italic"
                   />
                 </div>
               </div>
@@ -429,7 +430,7 @@ export default function Module1() {
               onClick={goNext}
               className="inline-flex items-center gap-2 px-6 py-3 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
-              Continue
+              Read the stories
               <ArrowDown className="w-4 h-4" />
             </button>
           </div>
@@ -439,15 +440,16 @@ export default function Module1() {
       {/* SECTION 2 — Stories (Flip Cards) */}
       {currentSection === 1 && (
         <div className="animate-in fade-in">
-          <div className="mb-8">
+          <div className="mb-6">
             <h2 className="font-serif text-2xl text-ink mb-2">
               You're not alone in this
             </h2>
-            <p className="text-sm text-muted leading-relaxed">
+            <p className="text-sm text-ink/70 leading-relaxed">
               Many people who seem to have everything figured out still feel that something is off.
               <br />
               Here are two real cases from Burnett and Evans's book.
             </p>
+            <p className="text-xs text-muted uppercase tracking-widest mt-4">↓ Read each card — tap to flip and see what's underneath</p>
           </div>
 
           {/* Story Carousel */}
@@ -457,13 +459,13 @@ export default function Module1() {
 
           {/* Transition into wicked problems */}
           <div className="px-1 mb-6">
-            <p className="text-sm text-muted leading-relaxed">
+            <p className="text-sm text-ink/70 leading-relaxed">
               What Allison and Sonya experienced is not unusual. Many people reach a point where the standard answers — work harder, be grateful, find your passion — don't quite fit. That's not a personal failure. It's a sign that meaning is a different kind of problem.
             </p>
           </div>
 
           {/* Self-explanation reflection */}
-          <div className="p-8 rounded-2xl border border-black/5 bg-white shadow-sm mb-8">
+          <div className="p-8 rounded-2xl border border-black/[0.08] bg-white shadow-sm mb-8">
             <h3 className="font-serif text-xl text-ink mb-1">
               Which story feels closer to your current experience — and why?
             </h3>
@@ -499,9 +501,9 @@ export default function Module1() {
                 <textarea
                   value={storyNote}
                   onChange={e => setStoryNote(e.target.value)}
-                  placeholder="No need for a full answer — a few words is enough."
+                  placeholder="A few words is enough."
                   rows={3}
-                  className="w-full bg-black/[0.02] border border-black/5 rounded-xl px-4 py-3 text-sm text-ink outline-none resize-none placeholder:text-black/20 focus:border-black/10 transition-colors"
+                  className="w-full bg-white border border-black/8 border-l-2 border-l-black/15 rounded-xl px-4 py-3 text-sm text-ink outline-none resize-none placeholder:text-black/20 placeholder:italic focus:border-black/15 focus:border-l-ink transition-colors"
                 />
               </div>
             )}
@@ -513,7 +515,7 @@ export default function Module1() {
                 onClick={goNext}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-all hover:-translate-y-0.5 hover:shadow-md"
               >
-                Continue
+                Explore the concept
                 <ArrowDown className="w-4 h-4" />
               </button>
             </div>
@@ -524,7 +526,7 @@ export default function Module1() {
       {/* SECTION 3 — Wicked Problems */}
       {currentSection === 2 && (
         <div className="animate-in fade-in">
-          <div className="p-8 rounded-2xl border border-black/5 bg-white shadow-sm">
+          <div className="p-8 rounded-2xl border border-black/[0.08] bg-white shadow-sm">
             <h2 className="font-serif text-2xl text-ink mb-2">
               Meaning could be a wicked problem
             </h2>
@@ -603,7 +605,7 @@ export default function Module1() {
               {wickedAnswer === 'A' && (
                 <div className="mt-6 p-5 rounded-xl bg-ink/[0.02] border border-black/5 flex items-start gap-3">
                   <FlaskConical className="w-4 h-4 text-muted mt-0.5 shrink-0" />
-                  <p className="text-sm text-muted leading-relaxed">
+                  <p className="text-sm text-ink/70 leading-relaxed">
                     That feels natural — but when a problem has no single answer, designers don't try to solve it by thinking harder. They explore it through <strong className="font-medium text-ink">experiments</strong>.
                   </p>
                 </div>
@@ -617,7 +619,7 @@ export default function Module1() {
                 onClick={goNext}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-all hover:-translate-y-0.5 hover:shadow-md"
               >
-                Continue
+                See the design mindset
                 <ArrowDown className="w-4 h-4" />
               </button>
             </div>
@@ -630,15 +632,16 @@ export default function Module1() {
         <div className="animate-in fade-in">
           {/* Title & Intro */}
           <div className="mb-10">
-            <h2 className="font-serif text-2xl text-ink mb-5">Designing Meaning</h2>
-            <div className="space-y-4 text-sm text-muted leading-relaxed">
+            <h2 className="font-serif text-2xl text-ink mb-2">Designing Meaning</h2>
+            <p className="text-xs text-muted uppercase tracking-widest mb-5">Read through — then save to complete Module 1</p>
+            <div className="space-y-4 text-sm text-ink/70 leading-relaxed">
               <p>If meaning is a wicked problem, trying to solve it by thinking alone often leaves people feeling stuck.</p>
               <p>Designers approach these kinds of problems differently. Instead of waiting until the right answer becomes clear, they move forward through action. They try small experiments, observe what happens, and adjust based on what they learn.</p>
             </div>
           </div>
 
           {/* Book framing */}
-          <div className="p-8 rounded-2xl border border-black/5 bg-white shadow-sm mb-8">
+          <div className="p-8 rounded-2xl border border-black/[0.08] bg-white shadow-sm mb-8">
             <p className="font-serif text-2xl text-ink mb-4">Book Framing</p>
             <p className="text-sm text-ink leading-relaxed mb-4">
               This course draws from the book <em>How to Live a Meaningful Life: Using Design Thinking to Unlock Purpose, Joy, and Flow Every Day</em> by Bill Burnett and Dave Evans.
@@ -653,7 +656,7 @@ export default function Module1() {
           </div>
 
           {/* Transition + Design Cycle */}
-          <div className="p-8 rounded-2xl border border-black/5 bg-white shadow-sm mb-8">
+          <div className="p-8 rounded-2xl border border-black/[0.08] bg-white shadow-sm mb-8">
             <p className="font-serif text-2xl text-ink mb-6">The Design Cycle</p>
             <div className="text-sm text-ink leading-relaxed space-y-4 mb-8">
               <p>Designers work through an iterative process of observation, experimentation, and learning. Rather than trying to discover meaning through analysis alone, they build their way forward.</p>
@@ -691,7 +694,7 @@ export default function Module1() {
           </div>
 
           {/* The shift */}
-          <div className="p-8 rounded-2xl border border-black/5 bg-white shadow-sm mb-8">
+          <div className="p-8 rounded-2xl border border-black/[0.08] bg-white shadow-sm mb-8">
             <p className="font-serif text-2xl text-ink mb-4">The Shift</p>
             <p className="text-sm text-ink leading-relaxed mb-6">Design thinking introduces a simple but important shift.</p>
             <div className="space-y-4">
@@ -706,7 +709,7 @@ export default function Module1() {
                 <span className="text-xs font-medium text-emerald-700 uppercase tracking-widest mt-0.5 shrink-0">After</span>
                 <p className="font-serif text-lg text-ink italic">"What possibilities could I test next?"</p>
               </div>
-              <p className="text-sm text-muted leading-relaxed">
+              <p className="text-sm text-ink/70 leading-relaxed">
                 Instead of waiting for the perfect answer, designers explore meaning through small experiments in real life.
               </p>
             </div>
@@ -726,7 +729,7 @@ export default function Module1() {
               disabled={saving}
               className="inline-flex items-center gap-2 px-6 py-3 bg-white text-ink rounded-xl text-sm font-medium hover:bg-white/90 transition-all hover:-translate-y-0.5 hover:shadow-md disabled:opacity-60"
             >
-              {saving ? 'Saving your reflection...' : 'Save Reflection & Continue'}
+              {saving ? 'Saving...' : 'Finish Module 1 & save'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

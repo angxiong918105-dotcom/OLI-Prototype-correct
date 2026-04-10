@@ -33,9 +33,9 @@ export async function generateReflectionFeedback(payload: ReflectionPayload): Pr
     next_step: data.next_step,
   });
 
-  const feedbackLines = [data.summary, data.pattern, data.next_step]
+  // Use ␞ (record separator) so the 3 parts can be split reliably in the UI
+  return [data.summary, data.pattern, data.next_step]
     .map((line) => line.trim())
-    .filter(Boolean);
-
-  return feedbackLines.join('\n');
+    .filter(Boolean)
+    .join('␞');
 }

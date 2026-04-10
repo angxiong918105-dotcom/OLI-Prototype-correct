@@ -227,7 +227,7 @@ export default function Module2() {
           </button>
         ))}
         <span className="text-xs text-muted ml-2">
-          {currentSection + 1} / {sections.length}
+          Section {currentSection + 1} of {sections.length}
         </span>
       </div>
 
@@ -315,7 +315,7 @@ export default function Module2() {
               onClick={goNext}
               className="inline-flex items-center gap-2 px-7 py-3.5 bg-ink text-white rounded-xl text-sm font-medium transition-all duration-200 hover:bg-ink/90 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm"
             >
-              Begin
+              Start the reframe
               <ArrowDown className="w-4 h-4" />
             </button>
           </motion.div>
@@ -374,8 +374,8 @@ export default function Module2() {
                 type="text"
                 value={chasingCustom}
                 onChange={e => setChasingCustom(e.target.value)}
-                placeholder="Type your own..."
-                className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-black/15"
+                placeholder="Write your own…"
+                className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-black/20 placeholder:italic"
               />
             </div>
           </div>
@@ -383,7 +383,7 @@ export default function Module2() {
           {/* Reframe card — appears after selection */}
           {selectedChasing.length > 0 && (
             <div className="animate-in fade-in">
-              <div className="p-6 rounded-2xl border border-black/5 bg-white shadow-sm mb-8">
+              <div className="p-6 rounded-2xl border border-black/[0.08] bg-white shadow-sm mb-8">
                 {/* 3-step visual flow */}
                 <div className="grid grid-cols-[1fr_24px_1fr_24px_1fr] items-start gap-1 mb-6">
                   {/* Step 1: what you selected */}
@@ -408,7 +408,7 @@ export default function Module2() {
                   {/* Step 2: looks like a goal */}
                   <div>
                     <span className="text-[10px] font-semibold text-muted uppercase tracking-widest block mb-2">Feels like</span>
-                    <p className="text-sm text-muted leading-relaxed">
+                    <p className="text-sm text-ink/70 leading-relaxed">
                       {selectedChasing.length === 1 ? 'A clear goal' : 'Clear goals'}
                     </p>
                   </div>
@@ -469,13 +469,13 @@ export default function Module2() {
 
           {/* Step-by-step reflection — collapsible after reveal */}
           {showImpactSummary ? (
-            <div className="mb-6 rounded-2xl border border-black/5 bg-white shadow-sm overflow-hidden">
+            <div className="mb-6 rounded-2xl border border-black/[0.08] bg-white shadow-sm overflow-hidden">
               {/* Summary + toggle header */}
               <button
                 onClick={() => setStepsExpanded(!stepsExpanded)}
                 className="w-full text-left px-5 py-4 hover:bg-black/[0.01] transition-colors"
               >
-                <p className="text-sm text-muted leading-relaxed">
+                <p className="text-sm text-ink/70 leading-relaxed">
                   You make an impact through <span className="text-ink font-medium">{impactWhere.toLowerCase().replace(/\.$/, '')}</span>.
                   It feels <span className="text-ink font-medium">{impactFeel.toLowerCase().replace(/\.$/, '')}</span> —
                   {' '}but it lasts <span className="text-ink font-medium">{impactLast.toLowerCase().replace(/\.$/, '')}</span>.
@@ -492,14 +492,14 @@ export default function Module2() {
                       <span className="w-5 h-5 rounded-full bg-ink text-white text-[10px] font-semibold flex items-center justify-center shrink-0">1</span>
                       <span className="text-sm text-ink font-medium">Where do you make the most impact?</span>
                     </div>
-                    <input type="text" value={impactWhere} onChange={e => setImpactWhere(e.target.value)} placeholder="Work, family, community..." className="w-full bg-white border-0 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 focus:ring-1 focus:ring-ink/10 transition-all" />
+                    <input type="text" value={impactWhere} onChange={e => setImpactWhere(e.target.value)} placeholder="A word or two…" className="w-full bg-white border border-black/8 border-l-2 border-l-black/15 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 placeholder:italic focus:border-black/15 focus:border-l-ink transition-all" />
                   </div>
                   <div className="p-4 rounded-xl border border-black/5 bg-black/[0.01]">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="w-5 h-5 rounded-full bg-ink text-white text-[10px] font-semibold flex items-center justify-center shrink-0">2</span>
                       <span className="text-sm text-ink font-medium">How does that feel?</span>
                     </div>
-                    <input type="text" value={impactFeel} onChange={e => setImpactFeel(e.target.value)} placeholder="Proud, energized, drained..." className="w-full bg-white border-0 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 focus:ring-1 focus:ring-ink/10 transition-all" />
+                    <input type="text" value={impactFeel} onChange={e => setImpactFeel(e.target.value)} placeholder="One or two words…" className="w-full bg-white border border-black/8 border-l-2 border-l-black/15 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 placeholder:italic focus:border-black/15 focus:border-l-ink transition-all" />
                   </div>
                   <div className="p-4 rounded-xl border border-black/5 bg-black/[0.01]">
                     <div className="flex items-center gap-2 mb-2">
@@ -523,7 +523,7 @@ export default function Module2() {
           ) : (
           <div className="space-y-4 mb-6">
             {/* Step 1 — always visible */}
-            <div className="p-5 rounded-2xl border border-black/5 bg-white shadow-sm">
+            <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-sm">
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-5 h-5 rounded-full bg-ink text-white text-[10px] font-semibold flex items-center justify-center shrink-0">1</span>
                 <span className="text-sm text-ink font-medium">Where do you make the most impact?</span>
@@ -532,8 +532,8 @@ export default function Module2() {
                 type="text"
                 value={impactWhere}
                 onChange={e => setImpactWhere(e.target.value)}
-                placeholder="Work, family, community..."
-                className="w-full bg-black/[0.015] border-0 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 focus:ring-1 focus:ring-ink/10 transition-all"
+                placeholder="A word or two…"
+                className="w-full bg-white border border-black/8 border-l-2 border-l-black/15 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 placeholder:italic focus:border-black/15 focus:border-l-ink transition-all"
               />
             </div>
 
@@ -551,8 +551,8 @@ export default function Module2() {
                 type="text"
                 value={impactFeel}
                 onChange={e => setImpactFeel(e.target.value)}
-                placeholder="Proud, energized, drained..."
-                className="w-full bg-black/[0.015] border-0 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 focus:ring-1 focus:ring-ink/10 transition-all"
+                placeholder="One or two words…"
+                className="w-full bg-white border border-black/8 border-l-2 border-l-black/15 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 placeholder:italic focus:border-black/15 focus:border-l-ink transition-all"
               />
             </div>
 
@@ -663,7 +663,7 @@ export default function Module2() {
                       initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.75 }}
-                      className="rounded-2xl border border-black/5 bg-white overflow-hidden"
+                      className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden"
                     >
                       <div className="px-5 py-3 flex items-center gap-3">
                         <span className="text-[10px] font-semibold text-muted/40 uppercase tracking-widest shrink-0">Old lens</span>
@@ -712,12 +712,12 @@ export default function Module2() {
             <h2 className="font-serif text-2xl text-ink mb-2">
               "I need to find my true purpose to feel fulfilled"
             </h2>
-            <p className="text-sm text-muted leading-relaxed">
+            <p className="text-sm text-ink/70 leading-relaxed">
               Let's look at what fulfillment actually asks of you.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl border border-black/5 bg-white shadow-sm mb-6">
+          <div className="p-6 rounded-2xl border border-black/[0.08] bg-white shadow-sm mb-6">
             <p className="text-sm text-ink mb-1.5">
               Is there any single role or path that can fully express everything you are?
             </p>
@@ -728,8 +728,8 @@ export default function Module2() {
               type="text"
               value={fulfillmentAnswer}
               onChange={e => setFulfillmentAnswer(e.target.value)}
-              placeholder="e.g. creator, parent, adventurer, caretaker…"
-              className="w-full bg-black/[0.015] border-0 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 focus:ring-1 focus:ring-ink/10 transition-all"
+              placeholder="A few roles or words…"
+              className="w-full bg-white border border-black/8 border-l-2 border-l-black/15 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 placeholder:italic focus:border-black/15 focus:border-l-ink transition-all"
             />
           </div>
 
@@ -740,7 +740,7 @@ export default function Module2() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sage/20 border border-sage/30 text-sm text-ink font-medium hover:bg-sage/30 transition-colors"
               >
                 <Sparkles className="w-4 h-4 text-muted" />
-                See what this suggests
+                See the reframe
               </button>
             </div>
           )}
@@ -782,7 +782,7 @@ export default function Module2() {
                       </span>
                     ))}
                   </div>
-                  <p className="text-sm text-muted leading-relaxed">
+                  <p className="text-sm text-ink/70 leading-relaxed">
                     You contain more identities than any single path can hold.
                   </p>
                 </motion.div>
@@ -806,7 +806,7 @@ export default function Module2() {
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.8 }}
-                  className="rounded-2xl border border-black/5 bg-white overflow-hidden"
+                  className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden"
                 >
                   <div className="px-5 py-3 flex items-center gap-3">
                     <span className="text-[10px] font-semibold text-muted/40 uppercase tracking-widest shrink-0">Old lens</span>
@@ -853,12 +853,12 @@ export default function Module2() {
             <h2 className="font-serif text-2xl text-ink mb-2">
               "I just need more — and then it will feel right"
             </h2>
-            <p className="text-sm text-muted leading-relaxed">
+            <p className="text-sm text-ink/70 leading-relaxed">
               More success, time, clarity. The logic feels sound — but does it hold up?
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl border border-black/5 bg-white shadow-sm mb-6">
+          <div className="p-6 rounded-2xl border border-black/[0.08] bg-white shadow-sm mb-6">
             <p className="text-sm text-ink mb-1.5">
               If you had more of what you think you need — would it ever be <em>enough</em>?
             </p>
@@ -869,8 +869,8 @@ export default function Module2() {
               type="text"
               value={moreAnswer}
               onChange={e => setMoreAnswer(e.target.value)}
-              placeholder="e.g. probably not, the bar keeps moving…"
-              className="w-full bg-black/[0.015] border-0 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 focus:ring-1 focus:ring-ink/10 transition-all"
+              placeholder="Be honest…"
+              className="w-full bg-white border border-black/8 border-l-2 border-l-black/15 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 placeholder:italic focus:border-black/15 focus:border-l-ink transition-all"
             />
           </div>
 
@@ -934,7 +934,7 @@ export default function Module2() {
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.8 }}
-                  className="rounded-2xl border border-black/5 bg-white overflow-hidden"
+                  className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden"
                 >
                   <div className="px-5 py-3 flex items-center gap-3">
                     <span className="text-[10px] font-semibold text-muted/40 uppercase tracking-widest shrink-0">Old lens</span>
@@ -957,7 +957,7 @@ export default function Module2() {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.4, delay: 1.0 }}
                 >
-                  <details className="group rounded-2xl border border-black/5 bg-white overflow-hidden">
+                  <details className="group rounded-2xl border border-black/[0.08] bg-white overflow-hidden">
                     <summary className="px-5 py-3.5 flex items-center justify-between cursor-pointer text-sm text-muted hover:bg-black/[0.01] transition-colors">
                       <span>Optional: two questions to sit with</span>
                       <ChevronDown className="w-3.5 h-3.5 text-muted/50 group-open:rotate-180 transition-transform duration-200" />
@@ -969,8 +969,8 @@ export default function Module2() {
                           type="text"
                           value={momentAnswer}
                           onChange={e => setMomentAnswer(e.target.value)}
-                          placeholder="It doesn't have to be big…"
-                          className="w-full bg-black/[0.015] border-0 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 focus:ring-1 focus:ring-ink/10 transition-all"
+                          placeholder="Something small is fine…"
+                          className="w-full bg-white border border-black/8 border-l-2 border-l-black/15 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 placeholder:italic focus:border-black/15 focus:border-l-ink transition-all"
                         />
                       </div>
                       <div>
@@ -979,8 +979,8 @@ export default function Module2() {
                           type="text"
                           value={alreadyHereAnswer}
                           onChange={e => setAlreadyHereAnswer(e.target.value)}
-                          placeholder="Something quiet, something taken for granted…"
-                          className="w-full bg-black/[0.015] border-0 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 focus:ring-1 focus:ring-ink/10 transition-all"
+                          placeholder="Something quiet or taken for granted…"
+                          className="w-full bg-white border border-black/8 border-l-2 border-l-black/15 rounded-lg px-4 py-3 text-sm text-ink outline-none placeholder:text-black/20 placeholder:italic focus:border-black/15 focus:border-l-ink transition-all"
                         />
                       </div>
                     </div>
@@ -1014,7 +1014,7 @@ export default function Module2() {
             <h2 className="font-serif text-2xl text-ink mb-2">
               Three beliefs, reframed
             </h2>
-            <p className="text-sm text-muted leading-relaxed">
+            <p className="text-sm text-ink/70 leading-relaxed">
               Here's what shifted across this module.
             </p>
           </div>
@@ -1035,7 +1035,7 @@ export default function Module2() {
                 after: 'Meaning shows up in moments, not in "more"',
               },
             ].map((item, idx) => (
-              <div key={idx} className="p-6 rounded-2xl border border-black/5 bg-white shadow-sm">
+              <div key={idx} className="p-6 rounded-2xl border border-black/[0.08] bg-white shadow-sm">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <span className="text-[10px] font-semibold text-muted uppercase tracking-widest block mb-2">Before</span>
@@ -1067,7 +1067,7 @@ export default function Module2() {
               onClick={goNext}
               className="inline-flex items-center gap-2 px-6 py-3 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
-              Continue
+              See what's next
               <ArrowDown className="w-4 h-4" />
             </button>
           </div>
@@ -1098,7 +1098,7 @@ export default function Module2() {
               disabled={saving}
               className="inline-flex items-center gap-2 px-6 py-3 bg-white text-ink rounded-xl text-sm font-medium hover:bg-white/90 transition-all hover:-translate-y-0.5 hover:shadow-md disabled:opacity-60"
             >
-              {saving ? 'Saving your reflections...' : 'Save Reflections & Continue'}
+              {saving ? 'Saving...' : 'Finish module & save'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
