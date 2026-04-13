@@ -8,6 +8,7 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Module1 from './pages/Module1';
 import Module2 from './pages/Module2';
+import Module3 from './pages/Module3';
 import Module from './pages/Module';
 import Reflection from './pages/Reflection';
 import Journal from './pages/Journal';
@@ -22,6 +23,7 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="module/intro" element={<Module1 />} />
             <Route path="module/reframe" element={<Module2 />} />
+            <Route path="module/meaning" element={<Module3 />} />
             <Route path="module/:id" element={<Module />} />
             <Route path="reflection/:id" element={<Reflection />} />
             <Route path="journal" element={<Journal />} />
