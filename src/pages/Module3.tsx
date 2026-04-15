@@ -56,22 +56,51 @@ const triggerOptions = [
 const comparisonRows = [
   { dimension: 'Focus', transactional: "What's next", flow: 'What is' },
   { dimension: 'Time', transactional: 'Past and future', flow: 'Present moment' },
-  {
-    dimension: 'Value',
-    transactional: 'Instrumental — matters for what it leads to',
-    flow: 'Intrinsic — matters for what it is',
-  },
   { dimension: 'Key question', transactional: '"What\'s next?"', flow: '"What\'s happening right now?"' },
-  {
-    dimension: 'Brain mode',
-    transactional: 'Achieving — organize, accomplish, control',
-    flow: 'Awakened — present, connected, receptive',
-  },
   {
     dimension: 'Experience',
     transactional: 'Efficient but rarely satisfying',
     flow: 'Alive, meaningful, sometimes transcendent',
   },
+];
+
+const fritzMoments = [
+  {
+    text: 'Alarm goes off. Fritz grabs his phone immediately, checking emails and rehearsing his opening slide.',
+    world: 'transactional' as const,
+    hint: "Mind already in the future — prepping, optimizing. He hasn't arrived yet.",
+  },
+  {
+    text: 'He steps outside. Pauses. "Wow — the air tastes great at this hour."',
+    world: 'flow' as const,
+    hint: "One sensory moment, fully attended to. That's all the flow world needs.",
+  },
+  {
+    text: 'He speed-dials the admin three times to confirm the presentation handouts are ready.',
+    world: 'transactional' as const,
+    hint: 'Still managing outcomes, even during a natural pause.',
+  },
+  {
+    text: 'While shaving, he notices how the feel of the razor changes as the water temperature rises.',
+    world: 'flow' as const,
+    hint: "Same task — shaving — but now attended to with presence. No extra time required.",
+  },
+  {
+    text: 'Walking through the park, a tree turning autumn colors catches his eye — and sparks a new idea for his talk.',
+    world: 'flow' as const,
+    hint: 'Flow world attention giving back to the transactional world. They coexist.',
+  },
+];
+
+const flipStepsData = [
+  { text: "Select a simple situation — making tea, walking to a meeting, eating lunch.", highlight: false },
+  { text: "Enter that situation in your usual transactional mode, but stay consciously ready.", highlight: false },
+  { text: "Notice carefully what the transaction is and how it's going.", highlight: false },
+  { text: "Say FLIP! in your mind — then immediately look for something in the flow world.", highlight: true },
+  { text: "Attend to that one thing alone for ten seconds, while still doing what you're doing.", highlight: false },
+  { text: "Say FLIP! again and return your focus to what's next in the transactional world.", highlight: true },
+  { text: "Continue on your way.", highlight: false },
+  { text: "Congratulate yourself for being a world flipper.", highlight: false },
 ];
 
 /* ── Component ── */
@@ -102,6 +131,13 @@ export default function Module3() {
   const [experimentReady, setExperimentReady] = useState(false);
 
   const [saving, setSaving] = useState(false);
+
+  // Section 3 Fritz sorting
+  const [fritzSortStep, setFritzSortStep] = useState(0);
+  const [fritzSortAnswers, setFritzSortAnswers] = useState<string[]>([]);
+
+  // Section 4 FLIP step-through
+  const [flipStep, setFlipStep] = useState(0);
 
   const navigate = useNavigate();
   const { addEntry } = useJournal();
@@ -489,38 +525,42 @@ export default function Module3() {
             </p>
           </div>
 
-          {/* Transactional World */}
-          <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-7">
-            <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-3">
-              The Transactional World
-            </p>
-            <p className="text-sm text-ink leading-relaxed mb-3">
-              We all need to navigate the transactional world. Your job in this world is to handle
-              all your transactions quickly and with as few mistakes as possible — take the kids to
-              school, go to work, buy groceries, make the boss happy, plan for retirement.
-            </p>
-            <p className="text-sm text-ink/70 leading-relaxed">
-              Transactions are fundamental to surviving. But they can be anathema to thriving — our
-              focus is on what comes <em>next</em>, and the kind of aliveness we're after is only
-              found in the present moment.
-            </p>
-          </div>
-
-          {/* Flow World */}
-          <div className="rounded-2xl border border-sage bg-sage/20 shadow-sm p-7">
-            <p className="text-xs font-semibold text-[#4A7C59]/70 uppercase tracking-widest mb-3">
-              The Flow World
-            </p>
-            <p className="text-sm text-ink leading-relaxed mb-3">
-              There's always another world right in front of us — the flow world. It flows all around
-              us all the time, full of meaning, joy, and wonder.
-            </p>
-            <p className="text-sm text-ink/70 leading-relaxed">
-              It's the whole river of reality coursing underneath, around, and within us: the
-              conversation you're in, the breeze blowing through the window, the cookies baking in
-              the oven. Joy, meaning, and aliveness only exist in the immediacy of the present
-              moment.
-            </p>
+          {/* Two worlds — compact visual */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-5">
+              <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-3">
+                Transactional World
+              </p>
+              <ul className="space-y-2">
+                {[
+                  'Focused on the next outcome',
+                  'Value = what this leads to',
+                  'Good at surviving — hard to thrive',
+                ].map(s => (
+                  <li key={s} className="flex items-start gap-2 text-sm text-ink/70">
+                    <span className="text-muted/60 mt-0.5 shrink-0">→</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-sage bg-sage/20 shadow-sm p-5">
+              <p className="text-xs font-semibold text-[#4A7C59]/70 uppercase tracking-widest mb-3">
+                Flow World
+              </p>
+              <ul className="space-y-2">
+                {[
+                  "Present to what's actually happening",
+                  'Value = the experience itself',
+                  'Where meaning, joy, and aliveness live',
+                ].map(s => (
+                  <li key={s} className="flex items-start gap-2 text-sm text-ink/70">
+                    <span className="text-[#4A7C59]/60 mt-0.5 shrink-0">→</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           {/* Comparison table */}
@@ -559,17 +599,6 @@ export default function Module3() {
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Critical insight */}
-          <div className="rounded-2xl border border-black/[0.08] bg-ink/[0.02] p-7">
-            <p className="text-sm text-ink leading-relaxed mb-2">
-              Both worlds are present all the time. They are very near to one another, and with time
-              and practice, you'll be able to move between them easily and quickly.
-            </p>
-            <p className="text-sm text-ink/70 leading-relaxed">
-              In the flow world, there's always enough — because each moment is its own reward.
-            </p>
           </div>
 
           {/* MCQ — concept check */}
@@ -667,73 +696,110 @@ export default function Module3() {
             </p>
           </div>
 
-          {/* Fritz story */}
+          {/* Fritz sorting game */}
           <div>
-            <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-4">
+            <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-1">
               Meet Fritz — a financial analyst with a big presentation today
             </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6">
-                <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-4">
-                  Transactional Fritz
-                </p>
-                <div className="space-y-3 text-xs text-ink/70 leading-relaxed">
-                  <p>
-                    His alarm barks: <em>"Dude — today's the day, get your game on!"</em>
-                  </p>
-                  <p>
-                    He grabs his phone, checks messages, rushes to shave while rehearsing his
-                    presentation.
-                  </p>
-                  <p>
-                    Eats an energy bar to avoid messing up his suit. Speed-dials the admin three
-                    times to make sure the handouts are ready.
-                  </p>
-                  <p>
-                    Parks, marches to his office. The admin says,{' '}
-                    <em>"Got your messages — all of them."</em> Fritz mutters thanks and keeps
-                    moving.
-                  </p>
-                  <p className="text-muted italic">
-                    He doesn't see the admin shake his head in disgust behind him.
-                  </p>
-                </div>
-              </div>
+            <p className="text-xs text-muted mb-4">
+              Read each moment from his morning. Which world is he in?
+            </p>
 
-              <div className="rounded-2xl border border-sage bg-sage/20 shadow-sm p-6">
-                <p className="text-[10px] font-semibold text-[#4A7C59]/70 uppercase tracking-widest mb-4">
-                  Flow-World Fritz too
-                </p>
-                <div className="space-y-3 text-xs text-ink/70 leading-relaxed">
-                  <p>His alarm plays his favorite song. He pauses to listen.</p>
-                  <p>
-                    Walks outside for a gulp of air.{' '}
-                    <em>"Wow, the air tastes great at this hour."</em>
+            {fritzSortStep < fritzMoments.length ? (
+              <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6">
+                {/* Mini progress */}
+                <div className="flex items-center gap-2 mb-5">
+                  <p className="text-[10px] text-muted uppercase tracking-widest font-semibold">
+                    Moment {fritzSortStep + 1} of {fritzMoments.length}
                   </p>
-                  <p>
-                    Makes scrambled eggs before dressing. While shaving, notices how the feel of the
-                    razor changes as the water temperature rises.
-                  </p>
-                  <p>
-                    The goofy look of shaving foam makes him smirk —{' '}
-                    <em>"That's my boy!"</em> He'll call her tonight.
-                  </p>
-                  <p>
-                    Walks through the park; a tree turning colors sparks an idea for his talk. He
-                    passes the admin: <em>"We all good?" — "Absolutely." — "Well done again, man,
-                    thanks!" — "Hey, I'm getting coffee — bring you one?"</em>
-                  </p>
+                  <div className="flex gap-1 ml-1">
+                    {fritzMoments.map((_, i) => (
+                      <div
+                        key={i}
+                        className={`h-1 w-5 rounded-full transition-all ${
+                          i < fritzSortStep
+                            ? 'bg-ink/40'
+                            : i === fritzSortStep
+                              ? 'bg-ink'
+                              : 'bg-black/10'
+                        }`}
+                      />
+                    ))}
+                  </div>
                 </div>
+
+                <p className="text-sm text-ink leading-relaxed mb-6 min-h-[2.5rem]">
+                  {fritzMoments[fritzSortStep].text}
+                </p>
+
+                {fritzSortAnswers[fritzSortStep] == null ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['transactional', 'flow'] as const).map(world => (
+                      <button
+                        key={world}
+                        onClick={() =>
+                          setFritzSortAnswers(prev => {
+                            const next = [...prev];
+                            next[fritzSortStep] = world;
+                            return next;
+                          })
+                        }
+                        className="py-3.5 rounded-xl border border-black/10 bg-white text-sm font-medium text-ink/70 hover:border-ink/30 hover:text-ink transition-all"
+                      >
+                        {world === 'transactional' ? 'Transactional' : 'Flow World'}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
+                    <div
+                      className={`rounded-xl border px-4 py-3 mb-4 ${
+                        fritzSortAnswers[fritzSortStep] === fritzMoments[fritzSortStep].world
+                          ? 'border-emerald-400/50 bg-emerald-50/60'
+                          : 'border-amber-300/50 bg-amber-50/60'
+                      }`}
+                    >
+                      <p
+                        className={`text-xs font-semibold mb-1 ${
+                          fritzSortAnswers[fritzSortStep] === fritzMoments[fritzSortStep].world
+                            ? 'text-emerald-700'
+                            : 'text-amber-700'
+                        }`}
+                      >
+                        {fritzSortAnswers[fritzSortStep] === fritzMoments[fritzSortStep].world
+                          ? 'Exactly right.'
+                          : `It's actually ${fritzMoments[fritzSortStep].world === 'flow' ? 'flow world' : 'transactional'}.`}
+                      </p>
+                      <p className="text-xs text-ink/70 leading-relaxed">
+                        {fritzMoments[fritzSortStep].hint}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setFritzSortStep(s => s + 1)}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-ink text-paper text-sm font-medium hover:bg-ink/85 transition-all"
+                    >
+                      {fritzSortStep < fritzMoments.length - 1 ? 'Next moment' : 'See the picture'}{' '}
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </motion.div>
+                )}
               </div>
-            </div>
-            <div className="mt-4 px-6 py-4 rounded-xl bg-ink/[0.02] border border-black/5">
-              <p className="text-xs text-ink/70 leading-relaxed">
-                The only difference between these two mornings is{' '}
-                <strong className="text-ink">which world Fritz chooses to be in</strong>. These two
-                very different morning routines take the same amount of Fritz's time — but deliver
-                very different experiences.
-              </p>
-            </div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl border border-black/[0.06] bg-ink/[0.02] p-6"
+              >
+                <p className="text-sm text-ink font-medium mb-2">
+                  Fritz ran both worlds simultaneously.
+                </p>
+                <p className="text-sm text-ink/70 leading-relaxed">
+                  The only difference is{' '}
+                  <strong className="text-ink">which world he chose to attend to</strong> in each
+                  moment. Same tasks, same time, same morning — completely different experience.
+                </p>
+              </motion.div>
+            )}
           </div>
 
           {/* Self-assessment */}
@@ -879,43 +945,56 @@ export default function Module3() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-7">
-            <p className="text-sm text-ink leading-relaxed mb-6">
-              The idea is simply to attune our attention to the two worlds and improve our facility
-              in moving between them. Since our goal is just to practice two-world awareness, it's
-              best to pick a situation that's{' '}
-              <strong className="font-medium">simple and uncomplicated</strong>.
-            </p>
-            <div className="space-y-3">
-              {[
-                "Select the situation in which you're going to flip the world switch.",
-                'Enter that situation in your usual transactional orientation, but consciously ready to flip.',
-                'Notice carefully what the transaction is and how it\'s going.',
-                'Partway into the experience, say FLIP! loudly in your mind (silently in the room).',
-                'Immediately look for something in the flow world in the present moment that can hold your attention.',
-                'Attend to that and that alone for ten seconds while still doing what you\'re doing.',
-                'Then again say FLIP! and refocus on what\'s next in the transactional world.',
-                'Continue on your way.',
-                'Congratulate yourself for being a world flipper.',
-                'Optional: Later, reflect on "What was that like?"',
-              ].map((step, i) => (
-                <div key={i} className="flex gap-4 items-start">
-                  <span
-                    className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold mt-0.5 ${
-                      i === 3 || i === 6
-                        ? 'bg-ink text-white'
-                        : 'bg-black/[0.05] text-muted'
-                    }`}
-                  >
-                    {i + 1}
-                  </span>
-                  <p
-                    className={`text-sm leading-relaxed ${i === 3 || i === 6 ? 'text-ink font-medium' : 'text-ink/70'}`}
-                  >
-                    {step}
-                  </p>
-                </div>
+          {/* Step-through FLIP card */}
+          <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm overflow-hidden">
+            {/* Progress bar */}
+            <div className="flex">
+              {flipStepsData.map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1 flex-1 transition-all duration-300 ${
+                    i <= flipStep ? 'bg-ink' : 'bg-black/5'
+                  }`}
+                />
               ))}
+            </div>
+
+            <div className="p-7">
+              <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-4">
+                Step {flipStep + 1} of {flipStepsData.length}
+              </p>
+
+              <motion.p
+                key={flipStep}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`text-base leading-relaxed mb-6 ${
+                  flipStepsData[flipStep].highlight
+                    ? 'font-bold text-ink text-lg'
+                    : 'text-ink'
+                }`}
+              >
+                {flipStepsData[flipStep].highlight && (
+                  <span className="inline-block mr-2 px-2 py-0.5 rounded bg-ink text-paper text-sm font-bold">
+                    FLIP!
+                  </span>
+                )}
+                {flipStepsData[flipStep].text}
+              </motion.p>
+
+              {flipStep < flipStepsData.length - 1 ? (
+                <button
+                  onClick={() => setFlipStep(s => s + 1)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-black/10 bg-white text-sm text-ink hover:border-ink/30 hover:bg-black/[0.02] transition-all"
+                >
+                  Next step <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <p className="text-sm text-[#6B8F6E] font-medium flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" /> You've walked through all the steps.
+                </p>
+              )}
             </div>
           </div>
 
@@ -961,12 +1040,16 @@ export default function Module3() {
             </p>
           </div>
 
-          <button
-            onClick={goNext}
-            className="flex items-center gap-2 px-7 py-3.5 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-all"
-          >
-            Design my experiment <ArrowRight className="w-4 h-4" />
-          </button>
+          {flipStep === flipStepsData.length - 1 && (
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onClick={goNext}
+              className="flex items-center gap-2 px-7 py-3.5 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-all"
+            >
+              Design my experiment <ArrowRight className="w-4 h-4" />
+            </motion.button>
+          )}
         </motion.div>
       )}
 
