@@ -51,8 +51,8 @@ function deriveConceptMastery(entries: JournalEntry[]): ConceptItem[] {
   return [
     { name: 'Pattern Observation', ...assess(['intro', 'observe']) },
     { name: 'Flow vs Coherence', ...assess(['reframe', 'branching']) },
-    { name: 'Experiment Design', ...assess(['ideate', 'prototype']) },
-    { name: 'Meaning Reflection', ...assess(['test']) },
+    { name: 'Experiment Design', ...assess(['ideate']) },
+    { name: 'Meaning Reflection', ...assess(['observe', 'branching', 'ideate']) },
   ];
 }
 
@@ -94,26 +94,23 @@ function deriveExperimentEvidence(entries: JournalEntry[]): ExperimentStep[] {
     },
     {
       label: 'Experiment Action',
-      description: 'Design and run a meaning experiment',
-      completed: ids.has('ideate') || ids.has('prototype'),
-      evidence: ids.has('prototype')
-        ? 'Prototype tested'
-        : ids.has('ideate')
-          ? 'Prototype designed'
-          : undefined,
+      description: 'Design and commit to your next meaning step',
+      completed: ids.has('ideate'),
+      evidence: ids.has('ideate') ? 'Personal compass drafted' : undefined,
     },
     {
       label: 'Meaning Reflection',
       description: 'Reflect on what you learned about meaning',
-      completed: ids.has('test'),
-      evidence: ids.has('test') ? 'Reflection completed' : undefined,
+      completed: entries.some((e) => Boolean(e.reflectionText?.trim())),
+      evidence: entries.some((e) => Boolean(e.reflectionText?.trim()))
+        ? 'Reflection recorded'
+        : undefined,
     },
   ];
 }
 
 function deriveSuggestedNextStep(entries: JournalEntry[]) {
   const ids = new Set(entries.map((e) => e.moduleId));
-  const reflections = entries.filter((e) => e.reflectionText).length;
 
   if (ids.size === 0)
     return {
@@ -142,20 +139,6 @@ function deriveSuggestedNextStep(entries: JournalEntry[]) {
         'Direction selected. Module 5 is about translating your choice into a concrete, small-scale experiment you can run this week.',
       linkTo: '/module/ideate',
       linkLabel: 'Design Your Experiment',
-    };
-  if (!ids.has('prototype'))
-    return {
-      message:
-        'Your experiment design is ready. Module 6 is about testing it — gathering real evidence about what shifts your sense of meaning.',
-      linkTo: '/module/prototype',
-      linkLabel: 'Run Your Prototype',
-    };
-  if (!ids.has('test'))
-    return {
-      message:
-        `You've run your experiment. With ${reflections} reflection${reflections !== 1 ? 's' : ''} so far, Module 7 will help you consolidate what you've learned into a forward plan.`,
-      linkTo: '/reflection/test',
-      linkLabel: 'Write Synthesis Reflection',
     };
 
   return {

@@ -12,8 +12,6 @@ export const modules: ModuleInfo[] = [
   { id: 'observe', number: 3, title: 'Meaning Design: Flip the World Switch', desc: 'Learn to move between two worlds and design your first meaningful moment.', path: '/module/meaning' },
   { id: 'branching', number: 4, title: 'Wonder & Flow', desc: 'Discover how wonder opens the door to flow and meaningful moments.', path: '/module/wonder' },
   { id: 'ideate', number: 5, title: 'Build a Personal Compass', desc: 'Define coherence, write your current story, and identify your Compass Values.', path: '/module/compass' },
-  { id: 'prototype', number: 6, title: 'Rapid Test', desc: 'Test fast, gather evidence, and reflect.', path: '/module/prototype' },
-  { id: 'test', number: 7, title: 'Move Forward with a Meaning Design Plan', desc: 'Choose next steps and continue iterating.', path: '/reflection/test' },
 ];
 
 export function getModuleById(id?: string) {
