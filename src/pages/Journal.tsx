@@ -67,13 +67,29 @@ export default function Journal() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto w-full py-20 px-8">
-      <h1 className="font-serif text-4xl mb-3 text-ink">Journal</h1>
-      <p className="text-sm text-muted leading-relaxed mb-12">
-        One reflection per module. Complete each module to unlock its entry.
-      </p>
+    <div className="max-w-xl mx-auto w-full py-20 px-8">
 
-      <div className="space-y-3">
+      {/* Notebook-style header */}
+      <div className="mb-10">
+        <p className="text-[10px] font-semibold text-muted/60 uppercase tracking-[0.18em] mb-3">
+          Meaning by Design
+        </p>
+        <h1 className="font-serif text-4xl text-ink italic leading-tight">Journal</h1>
+        {/* Double rule — classic ruled-notebook title divider */}
+        <div className="mt-4">
+          <div className="h-px bg-ink/15" />
+          <div className="h-px bg-ink/6 mt-[3px]" />
+        </div>
+        <p className="text-sm text-muted mt-4 leading-relaxed">
+          One reflection per module. Complete each module to unlock its entry.
+        </p>
+      </div>
+
+      {/* Notebook page */}
+      <div className="relative rounded-xl border border-black/[0.08] bg-white shadow-sm overflow-hidden">
+        {/* Red margin line */}
+        <div className="absolute left-[2.75rem] top-0 bottom-0 w-px bg-red-200/60" />
+
         {MODULE_SLOTS.map((slot, i) => {
           const status = statuses[slot.number] ?? 'locked';
           const completedDate = status === 'done' ? readCompletedDate(slot.number) : null;
@@ -82,42 +98,59 @@ export default function Journal() {
           return (
             <motion.div
               key={slot.number}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.07, duration: 0.35, ease: 'easeOut' }}
+              transition={{ delay: i * 0.07, duration: 0.3, ease: 'easeOut' }}
               onClick={() => handleClick(slot)}
-              className={`flex items-center gap-5 p-5 rounded-2xl border bg-white shadow-sm transition-all select-none ${
-                isClickable
-                  ? 'cursor-pointer hover:border-ink/25 hover:shadow'
-                  : 'opacity-55'
-              } ${status === 'done' ? 'border-black/[0.08]' : 'border-black/[0.07]'}`}
+              className={`relative flex items-stretch border-b border-black/[0.05] last:border-0 select-none transition-colors ${
+                isClickable ? 'cursor-pointer hover:bg-black/[0.015]' : ''
+              }`}
             >
-              {/* Module badge */}
-              <div className="w-10 h-10 rounded-xl bg-black/[0.04] flex items-center justify-center shrink-0">
-                <span className="text-[10px] font-semibold text-muted uppercase tracking-widest">
-                  M{slot.number}
+              {/* Margin: module number */}
+              <div
+                className={`w-[2.75rem] shrink-0 flex items-center justify-center py-5 ${
+                  status === 'locked' ? 'opacity-25' : ''
+                }`}
+              >
+                <span
+                  className={`text-[11px] font-semibold tabular-nums ${
+                    status === 'done' ? 'text-[#6B8F6E]' : 'text-muted/50'
+                  }`}
+                >
+                  {slot.number}
                 </span>
               </div>
 
-              {/* Text */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-ink leading-snug">{slot.title}</p>
-                <p className="text-xs text-muted mt-0.5">
-                  {status === 'locked' && 'Complete the module to unlock'}
-                  {status === 'available' && 'Ready to write'}
-                  {status === 'done' && (completedDate ? `Completed ${completedDate}` : 'Completed')}
-                </p>
-              </div>
+              {/* Content */}
+              <div
+                className={`flex flex-1 min-w-0 items-center gap-4 py-5 pl-4 pr-5 ${
+                  status === 'locked' ? 'opacity-35' : ''
+                }`}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-ink leading-snug">{slot.title}</p>
+                  <p className="text-xs text-muted mt-0.5">
+                    {status === 'locked' && 'Complete the module to unlock'}
+                    {status === 'available' && 'Ready to write'}
+                    {status === 'done' &&
+                      (completedDate ? `Written ${completedDate}` : 'Written')}
+                  </p>
+                </div>
 
-              {/* Icon */}
-              <div className="shrink-0">
-                {status === 'locked' && <Lock className="w-4 h-4 text-muted/40" />}
-                {status === 'available' && <Pencil className="w-4 h-4 text-ink/50" />}
-                {status === 'done' && <CheckCircle2 className="w-4 h-4 text-[#6B8F6E]" />}
+                <div className="shrink-0">
+                  {status === 'locked' && <Lock className="w-3.5 h-3.5 text-muted/30" />}
+                  {status === 'available' && <Pencil className="w-3.5 h-3.5 text-ink/45" />}
+                  {status === 'done' && <CheckCircle2 className="w-4 h-4 text-[#6B8F6E]" />}
+                </div>
               </div>
             </motion.div>
           );
         })}
+      </div>
+
+      {/* Page-end rule */}
+      <div className="mt-5 opacity-20">
+        <div className="h-px bg-ink" />
       </div>
     </div>
   );
