@@ -1,239 +1,124 @@
-import { useJournal } from '../context/JournalContext';
-import { BookOpen, RefreshCw } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { PATTERN_MIN_ENTRIES, PATTERN_MIN_MODULES } from '../lib/generatePatternInsight';
-import FeedbackBlock from '../components/FeedbackBlock';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Lock, Pencil, CheckCircle2 } from 'lucide-react';
+import { motion } from 'motion/react';
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+type JournalStatus = 'locked' | 'available' | 'done';
+
+interface ModuleSlot {
+  number: number;
+  title: string;
+  journalPath?: string;
 }
 
-// ─── Empty state ────────────────────────────────────────────────────────────
+const MODULE_SLOTS: ModuleSlot[] = [
+  { number: 1, title: 'Meaning as Design' },
+  { number: 2, title: 'Reframe Meaning & Purpose' },
+  { number: 3, title: 'Meaning Design: Flip the World Switch' },
+  { number: 4, title: 'Wonder & Flow', journalPath: '/journal/m4' },
+  { number: 5, title: 'Build a Personal Compass' },
+];
 
-function EmptyState() {
-  return (
-    <div className="p-8 rounded-2xl border border-black/5 bg-white/50 text-center">
-      <BookOpen className="w-5 h-5 text-muted mx-auto mb-4" />
-      <p className="text-sm text-ink leading-relaxed mb-1">Nothing here yet.</p>
-      <p className="text-sm text-muted leading-relaxed">
-        Your journal starts after your first reflection. Complete Module 1 to begin.
-      </p>
-      <Link
-        to="/module/intro"
-        className="inline-flex items-center gap-2 mt-6 px-5 py-2.5 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-all"
-      >
-        Start Module 1
-      </Link>
-    </div>
-  );
+function readStatus(number: number): JournalStatus {
+  if (number === 4) {
+    const val = localStorage.getItem('journal_m4_status');
+    if (val === 'available' || val === 'done') return val;
+    return 'locked';
+  }
+  if (number === 5) {
+    return localStorage.getItem('module5_unlocked') === 'true' ? 'available' : 'locked';
+  }
+  return 'locked';
 }
 
-// ─── Not enough history state ────────────────────────────────────────────────
-
-function NotEnoughHistoryState({ entryCount }: { entryCount: number }) {
-  const remaining = PATTERN_MIN_ENTRIES - entryCount;
-  return (
-    <div className="p-6 rounded-2xl border border-black/5 bg-white/40">
-      <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-2">
-        Pattern insights
-      </p>
-      <p className="text-sm text-muted leading-relaxed">
-        Patterns surface after {PATTERN_MIN_ENTRIES} entries across at least {PATTERN_MIN_MODULES} modules.{' '}
-        {remaining === 1
-          ? 'One more entry to go.'
-          : `${remaining} more entries to go.`}
-      </p>
-    </div>
-  );
+function readCompletedDate(number: number): string | null {
+  if (number !== 4) return null;
+  const raw = localStorage.getItem('journal_m4_entry');
+  if (!raw) return null;
+  try {
+    const entry = JSON.parse(raw) as { completedAt?: string };
+    if (entry.completedAt) {
+      return new Date(entry.completedAt).toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
+  } catch {}
+  return null;
 }
-
-// ─── Pattern insight block ───────────────────────────────────────────────────
-
-function PatternInsightBlock({
-  pattern,
-  nextStep,
-  generatedAt,
-  onRefresh,
-  loading,
-}: {
-  pattern: string;
-  nextStep: string;
-  generatedAt: string;
-  onRefresh: () => void;
-  loading: boolean;
-}) {
-  return (
-    <div className="p-7 rounded-2xl border border-black/8 bg-white shadow-sm">
-      <div className="flex items-baseline justify-between mb-5">
-        <p className="text-[10px] font-semibold text-muted uppercase tracking-widest">
-          Pattern emerging
-        </p>
-        <button
-          onClick={onRefresh}
-          disabled={loading}
-          className="flex items-center gap-1.5 text-[10px] text-muted hover:text-ink transition-colors disabled:opacity-40"
-          title="Regenerate insight"
-        >
-          <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-          {loading ? 'Thinking…' : 'Refresh'}
-        </button>
-      </div>
-
-      <p className="text-sm text-ink leading-relaxed mb-5">{pattern}</p>
-
-      <div className="pt-5 border-t border-black/5">
-        <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-2">
-          Something to try
-        </p>
-        <p className="text-sm text-ink leading-relaxed">{nextStep}</p>
-      </div>
-
-      <p className="text-[10px] text-muted mt-5">
-        Generated {formatDate(generatedAt)}
-      </p>
-    </div>
-  );
-}
-
-// ─── Single entry card ───────────────────────────────────────────────────────
-
-function EntryCard({ entry }: { entry: ReturnType<typeof useJournal>['entries'][number] }) {
-  return (
-    <article className="p-7 rounded-2xl border border-black/5 bg-white shadow-sm">
-      {/* Date + module */}
-      <div className="flex items-baseline gap-2 mb-6">
-        <span className="text-sm font-medium text-ink">{formatDate(entry.createdAt)}</span>
-        {entry.moduleTitle && (
-          <>
-            <span className="text-muted">·</span>
-            <span className="text-sm text-muted">{entry.moduleTitle}</span>
-          </>
-        )}
-      </div>
-
-      {/* Signals */}
-      {entry.selectedSignals && entry.selectedSignals.length > 0 && (
-        <div className="mb-5">
-          <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-3">
-            What you noticed
-          </p>
-          <ul className="space-y-1.5">
-            {entry.selectedSignals.map((signal) => (
-              <li key={signal} className="text-sm text-ink leading-relaxed flex gap-2">
-                <span className="text-muted mt-0.5 shrink-0">·</span>
-                {signal}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Reflection */}
-      {entry.reflectionText && (
-        <div className="mb-5">
-          <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-3">
-            Your reflection
-          </p>
-          <p className="text-sm text-ink leading-relaxed">"{entry.reflectionText}"</p>
-        </div>
-      )}
-
-      {/* Single-entry AI response */}
-      {entry.aiResponse && (
-        <FeedbackBlock text={entry.aiResponse} />
-      )}
-
-      {/* Meaning rating */}
-      {entry.meaningRating !== undefined && (
-        <div className="mt-5 pt-4 border-t border-black/5">
-          <span className="text-xs text-muted">Meaning rating: {entry.meaningRating}/100</span>
-        </div>
-      )}
-    </article>
-  );
-}
-
-// ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function Journal() {
-  const {
-    entries,
-    hasEntries,
-    patternInsight,
-    patternInsightLoading,
-    hasEnoughForPattern,
-    refreshPatternInsight,
-  } = useJournal();
+  const navigate = useNavigate();
+  const [statuses, setStatuses] = useState<Record<number, JournalStatus>>({});
 
-  const sorted = [...entries].reverse();
+  useEffect(() => {
+    const s: Record<number, JournalStatus> = {};
+    for (const slot of MODULE_SLOTS) {
+      s[slot.number] = readStatus(slot.number);
+    }
+    setStatuses(s);
+  }, []);
+
+  const handleClick = (slot: ModuleSlot) => {
+    const status = statuses[slot.number];
+    if (status === 'locked' || !slot.journalPath) return;
+    navigate(slot.journalPath);
+  };
 
   return (
     <div className="max-w-2xl mx-auto w-full py-20 px-8">
       <h1 className="font-serif text-4xl mb-3 text-ink">Journal</h1>
       <p className="text-sm text-muted leading-relaxed mb-12">
-        What you noticed, reflected on, and where things seem to be going.
+        One reflection per module. Complete each module to unlock its entry.
       </p>
 
-      {/* Empty state */}
-      {!hasEntries && <EmptyState />}
+      <div className="space-y-3">
+        {MODULE_SLOTS.map((slot, i) => {
+          const status = statuses[slot.number] ?? 'locked';
+          const completedDate = status === 'done' ? readCompletedDate(slot.number) : null;
+          const isClickable = status !== 'locked' && !!slot.journalPath;
 
-      {hasEntries && (
-        <div className="space-y-6">
-          {/* Pattern insight — shown above entries once there's enough history */}
-          {hasEnoughForPattern ? (
-            patternInsight ? (
-              <PatternInsightBlock
-                pattern={patternInsight.pattern}
-                nextStep={patternInsight.next_step}
-                generatedAt={patternInsight.generatedAt}
-                onRefresh={refreshPatternInsight}
-                loading={patternInsightLoading}
-              />
-            ) : patternInsightLoading ? (
-              <div className="p-7 rounded-2xl border border-black/5 bg-white/50">
-                <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-2">
-                  Pattern emerging
-                </p>
-                <p className="text-sm text-muted">Looking across your entries…</p>
+          return (
+            <motion.div
+              key={slot.number}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.07, duration: 0.35, ease: 'easeOut' }}
+              onClick={() => handleClick(slot)}
+              className={`flex items-center gap-5 p-5 rounded-2xl border bg-white shadow-sm transition-all select-none ${
+                isClickable
+                  ? 'cursor-pointer hover:border-ink/25 hover:shadow'
+                  : 'opacity-55'
+              } ${status === 'done' ? 'border-black/[0.08]' : 'border-black/[0.07]'}`}
+            >
+              {/* Module badge */}
+              <div className="w-10 h-10 rounded-xl bg-black/[0.04] flex items-center justify-center shrink-0">
+                <span className="text-[10px] font-semibold text-muted uppercase tracking-widest">
+                  M{slot.number}
+                </span>
               </div>
-            ) : (
-              // Conditions met but never triggered — let user request it
-              <div className="p-7 rounded-2xl border border-black/5 bg-white/50">
-                <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-2">
-                  Pattern emerging
-                </p>
-                <p className="text-sm text-muted leading-relaxed mb-4">
-                  You have enough history to surface a pattern across your entries.
-                </p>
-                <button
-                  onClick={refreshPatternInsight}
-                  className="text-sm text-ink underline underline-offset-2 hover:text-ink/70 transition-colors"
-                >
-                  Generate insight
-                </button>
-              </div>
-            )
-          ) : (
-            <NotEnoughHistoryState entryCount={entries.length} />
-          )}
 
-          {/* Divider between pattern block and entries */}
-          <div className="pt-2">
-            <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-6">
-              Entries
-            </p>
-            <div className="space-y-6">
-              {sorted.map((entry) => (
-                <EntryCard key={entry.id} entry={entry} />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+              {/* Text */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-ink leading-snug">{slot.title}</p>
+                <p className="text-xs text-muted mt-0.5">
+                  {status === 'locked' && 'Complete the module to unlock'}
+                  {status === 'available' && 'Ready to write'}
+                  {status === 'done' && (completedDate ? `Completed ${completedDate}` : 'Completed')}
+                </p>
+              </div>
+
+              {/* Icon */}
+              <div className="shrink-0">
+                {status === 'locked' && <Lock className="w-4 h-4 text-muted/40" />}
+                {status === 'available' && <Pencil className="w-4 h-4 text-ink/50" />}
+                {status === 'done' && <CheckCircle2 className="w-4 h-4 text-[#6B8F6E]" />}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
     </div>
   );
 }

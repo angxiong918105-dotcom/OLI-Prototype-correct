@@ -1,17 +1,18 @@
-import { useState } from 'react';
-import { ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowRight, CheckCircle2, Pencil } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useJournal } from '../context/JournalContext';
 import { motion } from 'motion/react';
-import FeedbackBlock from '../components/FeedbackBlock';
+import SoundFamiliar from '../components/SoundFamiliar';
+import ThreeGlassesModulePage from '../components/ThreeGlassesModulePage';
 
 /* ── Constants ── */
 
 const sections = [
   'Intro',
+  'Scenario',
+  'Three Glasses',
   'Are You Seeing?',
-  'The Wonder Formula',
-  'Wonder → Flow',
   'The Onion Story',
   'Design Experiment',
   'Summary',
@@ -83,32 +84,81 @@ const pipelineSteps = [
   { label: 'Meaning Moment', sub: 'Intrinsic, alive' },
 ];
 
+const curiositySenseOptions = [
+  {
+    id: 'sight',
+    emoji: '👁',
+    title: 'Sight',
+    text: 'What does it actually look like, up close?',
+  },
+  {
+    id: 'touch',
+    emoji: '🤲',
+    title: 'Touch',
+    text: 'How does it feel in my hands?',
+  },
+  {
+    id: 'sound',
+    emoji: '👂',
+    title: 'Sound',
+    text: 'What do I hear when I pay attention?',
+  },
+  {
+    id: 'smell',
+    emoji: '👃',
+    title: 'Smell',
+    text: 'What scents am I usually ignoring?',
+  },
+] as const;
+
+const wonderQuestionPlaceholders = [
+  'Where did this object come from before it reached me?',
+  'What makes this texture feel the way it does?',
+  'How does the rhythm change as I keep going?',
+];
+
 /* ── Component ── */
 
 export default function Module4() {
   const [currentSection, setCurrentSection] = useState(0);
 
   // Section 1
-  const [perceptionMode, setPerceptionMode] = useState<'labels' | 'fresh' | null>(null);
+  const [showChecklistGarden, setShowChecklistGarden] = useState(false);
+  const [showCuriosityGarden, setShowCuriosityGarden] = useState(false);
+  const [hasViewedChecklistGarden, setHasViewedChecklistGarden] = useState(false);
+  const [hasViewedCuriosityGarden, setHasViewedCuriosityGarden] = useState(false);
+  const [isSoundFamiliarOpen, setIsSoundFamiliarOpen] = useState(false);
+  const [soundFamiliarSelection, setSoundFamiliarSelection] = useState<string | null>(null);
 
   // Section 2
+  const [perceptionMode, setPerceptionMode] = useState<'labels' | 'fresh' | null>(null);
+
+  // Section 3
   const [glassesMCQ, setGlassesMCQ] = useState<string | null>(null);
   const [glassesMCQSubmitted, setGlassesMCQSubmitted] = useState(false);
 
-  // Section 3
+  // Section 4
   const [flowMCQ, setFlowMCQ] = useState<string | null>(null);
   const [flowMCQSubmitted, setFlowMCQSubmitted] = useState(false);
-
-  // Section 4
-  const [choreTask, setChoreTask] = useState<string | null>(null);
+  const [showFlowNote, setShowFlowNote] = useState(false);
 
   // Section 5
-  const [wonderQuestion, setWonderQuestion] = useState('');
-  const [wonderFeedback, setWonderFeedback] = useState('');
-  const [wonderFeedbackLoading, setWonderFeedbackLoading] = useState(false);
-  const [wonderResonance, setWonderResonance] = useState<string | null>(null);
+  const [choreTask, setChoreTask] = useState<string | null>(null);
 
   // Section 6
+  const [experimentTask, setExperimentTask] = useState('');
+  const [isTaskConfirmed, setIsTaskConfirmed] = useState(false);
+  const [isCommitConfirmed, setIsCommitConfirmed] = useState(false);
+  const [selectedCuriositySenses, setSelectedCuriositySenses] = useState<
+    Array<(typeof curiositySenseOptions)[number]['id']>
+  >([]);
+  const [isSenseConfirmed, setIsSenseConfirmed] = useState(false);
+  const [isWonderQuestionConfirmed, setIsWonderQuestionConfirmed] = useState(false);
+  const [wonderPlaceholderIndex, setWonderPlaceholderIndex] = useState(0);
+
+  const [wonderQuestion, setWonderQuestion] = useState('');
+
+  // Section 7
   const [experimentReady, setExperimentReady] = useState(false);
 
   const [saving, setSaving] = useState(false);
@@ -116,29 +166,28 @@ export default function Module4() {
   const navigate = useNavigate();
   const { addEntry } = useJournal();
 
+  const hasCompletedScenarioCards = hasViewedChecklistGarden && hasViewedCuriosityGarden;
+  const hasCompletedScenarioSection = hasCompletedScenarioCards && !!soundFamiliarSelection;
+
+  const selectedSenseMeta = curiositySenseOptions.filter(s => selectedCuriositySenses.includes(s.id));
+
+  useEffect(() => {
+    if (!choreTask || experimentTask.trim()) return;
+    const option = choreOptions.find(o => o.id === choreTask);
+    if (option) setExperimentTask(option.label);
+  }, [choreTask, experimentTask]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setWonderPlaceholderIndex(prev => (prev + 1) % wonderQuestionPlaceholders.length);
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const goNext = () => {
     if (currentSection < sections.length - 1) {
       setCurrentSection(s => s + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const fetchWonderFeedback = async () => {
-    if (!wonderQuestion.trim() || wonderFeedbackLoading) return;
-    setWonderFeedbackLoading(true);
-    try {
-      const res = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ journalEntry: wonderQuestion.trim() }),
-      });
-      const data = await res.json();
-      const text = [data.summary, data.pattern, data.next_step].filter(Boolean).join('␞');
-      setWonderFeedback(text);
-    } catch {
-      setWonderFeedback('Your wonder question has been noted.');
-    } finally {
-      setWonderFeedbackLoading(false);
     }
   };
 
@@ -155,9 +204,15 @@ export default function Module4() {
       );
     if (wonderQuestion) parts.push(`Wonder experiment question: ${wonderQuestion}`);
 
+    // Save experiment inputs and unlock journal entry
+    localStorage.setItem('m4_task', experimentTask);
+    localStorage.setItem('m4_sense', selectedCuriositySenses.join(', '));
+    localStorage.setItem('m4_wonder', wonderQuestion);
+    localStorage.setItem('journal_m4_status', 'available');
+
     await addEntry({
       moduleId: 'branching',
-      moduleTitle: 'Wonder & Flow',
+      moduleTitle: 'From Wonder to Flow',
       selectedSignals: choreTask
         ? [choreOptions.find(o => o.id === choreTask)?.label ?? '']
         : [],
@@ -172,7 +227,7 @@ export default function Module4() {
       {/* Module Header */}
       <div className="mb-6">
         <span className="text-xs font-medium text-muted uppercase tracking-widest">Module 4</span>
-        <h1 className="font-serif text-4xl mt-2 text-ink">Wonder & Flow</h1>
+        <h1 className="font-serif text-4xl mt-2 text-ink">From Wonder to Flow</h1>
       </div>
 
       {/* Progress */}
@@ -207,44 +262,50 @@ export default function Module4() {
           transition={{ duration: 0.5, ease: 'easeOut' }}
         >
           <h2 className="font-serif text-3xl text-ink mb-4 leading-snug">
-            Wonder is not childish. It's a design tool.
+            Wonder could be your design tool for everyday meaning.
           </h2>
           <p className="text-sm text-muted mb-8 leading-relaxed max-w-2xl">
-            In the last module, you learned to flip between two worlds — transactional and present.
-            This module goes deeper: what happens <em>inside</em> that present world, and how wonder
-            becomes the gateway to flow states.
+            In Module 3, you learned to flip between the transactional world and the flow world. You prototyped a meaning experiment: ten seconds of noticing something for what it IS.
+            <br />
+            <br />
+            But you may have discovered that the moment was fleeting. You flipped in, and then your brain pulled you right back out.
+            That's the problem this module is here to solve.
           </p>
 
           {/* Module info card */}
-          <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-7 mb-10">
+          <div className="max-w-3xl rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6 mb-10">
             <div className="grid grid-cols-3 divide-x divide-black/5">
-              <div className="pr-6">
+              <div className="pr-5">
                 <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-1">
                   Duration
                 </p>
-                <p className="text-sm text-ink font-medium">~6 minutes</p>
+                <p className="text-sm text-ink font-medium">~8 minutes</p>
               </div>
-              <div className="px-6">
+              <div className="px-5">
                 <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-1">
-                  You will
+                  Prerequisite
                 </p>
-                <p className="text-sm text-ink font-medium">Discover your wonder formula</p>
+                <p className="text-sm text-ink font-medium">Module 3</p>
               </div>
-              <div className="pl-6">
+              <div className="pl-5">
                 <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-1">
-                  Leave with
+                  You'll Design
                 </p>
-                <p className="text-sm text-ink font-medium">One wonder experiment to try today</p>
+                <p className="text-sm text-ink font-medium">
+                  Your first wonder-to-flow experiment
+                </p>
               </div>
             </div>
           </div>
 
-          <blockquote className="border-l-2 border-ink/20 pl-5 mb-10">
-            <p className="text-base text-ink/80 italic leading-relaxed">
-              "Wonder is not the opposite of knowledge — it's what happens when you stop filtering
-              experience through what you already know."
-            </p>
-          </blockquote>
+          <ol className="text-sm text-ink/85 leading-relaxed space-y-2 mb-10 list-decimal pl-5">
+            <li>Discover why the flip feels fleeting</li>
+            <li>Learn three ways of seeing that move you from tasks to wonder</li>
+            <li>See how curiosity + mystery = wonder</li>
+            <li>Meet the two mindsets that let you stay in the flow world</li>
+            <li>Watch the full pipeline in action</li>
+            <li>Design your own wonder-to-flow experiment to try today</li>
+          </ol>
 
           <button
             onClick={goNext}
@@ -255,7 +316,7 @@ export default function Module4() {
         </motion.div>
       )}
 
-      {/* ─── SECTION 1 — Are You Seeing? ─── */}
+      {/* ─── SECTION 1 — Scenario ─── */}
       {currentSection === 1 && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -264,235 +325,155 @@ export default function Module4() {
           className="space-y-8"
         >
           <div>
-            <h2 className="font-serif text-2xl text-ink mb-3">Are you really seeing it?</h2>
-            <p className="text-sm text-muted leading-relaxed max-w-2xl">
-              Most of the time, we don't look at the world — we look <em>through</em> it. We see
-              through a lens of labels, categories, and expectations. The chair is just "a chair."
-              The walk home is just "getting home." The familiar becomes invisible.
-            </p>
+            <h2 className="font-serif text-2xl text-ink mb-3">
+              Let's start with a scenario. Imagine you step into a small garden.
+            </h2>
           </div>
 
-          <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6">
-            <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-4">
-              The Two Lenses
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-xl border border-black/10 bg-black/[0.02] p-4">
-                <p className="text-sm font-semibold text-ink mb-2">Through Labels</p>
-                <ul className="text-xs text-muted space-y-1.5">
-                  <li>→ Name and categorize immediately</li>
-                  <li>→ Skip the detail once identified</li>
-                  <li>→ Experience filtered through expectation</li>
-                  <li>→ Efficient, but not alive</li>
-                </ul>
-              </div>
-              <div className="rounded-xl border border-[#6B8F6E]/30 bg-[#E3E8E4]/40 p-4">
-                <p className="text-sm font-semibold text-ink mb-2">With Fresh Eyes</p>
-                <ul className="text-xs text-muted space-y-1.5">
-                  <li>→ Notice before naming</li>
-                  <li>→ Stay with texture, quality, detail</li>
-                  <li>→ Curiosity-led, not category-led</li>
-                  <li>→ Slower — but more vivid</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <p className="text-sm text-ink mb-4">
-              Honestly — which lens do you tend to look through in your everyday life?
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              {(['labels', 'fresh'] as const).map(mode => (
-                <button
-                  key={mode}
-                  onClick={() => setPerceptionMode(mode)}
-                  className={`text-left p-5 rounded-2xl border text-sm transition-all ${
-                    perceptionMode === mode
-                      ? 'border-ink bg-ink/[0.04] text-ink font-medium'
-                      : 'border-black/10 bg-white text-ink/70 hover:border-ink/30 hover:text-ink'
-                  }`}
-                >
-                  {mode === 'labels' ? (
-                    <>
-                      <span className="block font-semibold mb-1">Mostly labels</span>
-                      <span className="text-xs text-muted">
-                        I name things quickly and move on — attention is a limited resource
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="block font-semibold mb-1">Often fresh eyes</span>
-                      <span className="text-xs text-muted">
-                        I notice details and linger — small things catch my attention
-                      </span>
-                    </>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {perceptionMode && (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-black/[0.06] bg-white shadow-sm p-5 text-sm text-ink/80 leading-relaxed"
-            >
-              {perceptionMode === 'labels' ? (
-                <>
-                  <strong className="text-ink">That's the default setting for most adults.</strong>{' '}
-                  The brain optimizes for efficiency — labeling is fast. But efficiency and meaning
-                  aren't always the same thing. This module teaches you to toggle between them.
-                </>
-              ) : (
-                <>
-                  <strong className="text-ink">You already have the instinct.</strong> The goal of
-                  this module isn't to make you more observant — it's to make the switch deliberate,
-                  so you can activate it when it matters most.
-                </>
-              )}
-            </motion.div>
-          )}
-
-          {perceptionMode && (
-            <button
-              onClick={goNext}
-              className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
-            >
-              Continue <ArrowRight className="w-4 h-4" />
-            </button>
-          )}
-        </motion.div>
-      )}
-
-      {/* ─── SECTION 2 — The Wonder Formula ─── */}
-      {currentSection === 2 && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="space-y-8"
-        >
-          <div>
-            <h2 className="font-serif text-2xl text-ink mb-3">The Wonder Formula</h2>
-            <p className="text-sm text-muted leading-relaxed max-w-2xl">
-              Wonder isn't a feeling that arrives by chance. It's the product of two things happening
-              together.
-            </p>
-          </div>
-
-          {/* Formula visual */}
-          <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-8">
-            <div className="flex items-center justify-center gap-6 text-center">
-              <div>
-                <div className="text-3xl font-serif text-ink mb-2">Noticing</div>
-                <p className="text-xs text-muted max-w-[120px]">
-                  Attending to detail before labeling
-                </p>
-              </div>
-              <div className="text-2xl text-muted font-light">×</div>
-              <div>
-                <div className="text-3xl font-serif text-ink mb-2">Curiosity</div>
-                <p className="text-xs text-muted max-w-[120px]">
-                  Following interest without agenda
-                </p>
-              </div>
-              <div className="text-2xl text-muted font-light">=</div>
-              <div>
-                <div className="text-3xl font-serif text-[#6B8F6E] mb-2">Wonder</div>
-                <p className="text-xs text-muted max-w-[120px]">
-                  Engaged, alive, present
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-sm text-muted leading-relaxed max-w-2xl">
-            Notice that neither component requires anything extraordinary. You don't need a
-            mountaintop. You need attention and an open question.
-          </p>
-
-          {/* MCQ */}
-          <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6">
-            <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-1">
-              Quick Check
-            </p>
-            <p className="text-sm text-ink font-medium mb-5">
-              Which of these shows someone seeing with fresh eyes?
-            </p>
-            <div className="space-y-2.5">
-              {glassesMCQOptions.map(opt => {
-                const isSelected = glassesMCQ === opt.id;
-                const showResult = glassesMCQSubmitted;
-                return (
-                  <button
-                    key={opt.id}
-                    disabled={glassesMCQSubmitted}
-                    onClick={() => !glassesMCQSubmitted && setGlassesMCQ(opt.id)}
-                    className={`w-full text-left px-5 py-3.5 rounded-xl border text-sm transition-all flex items-center gap-3 ${
-                      showResult && opt.correct
-                        ? 'border-emerald-400/50 bg-emerald-50/60 text-emerald-900'
-                        : showResult && isSelected && !opt.correct
-                          ? 'border-red-300/50 bg-red-50/60 text-red-800'
-                          : isSelected
-                            ? 'border-ink bg-ink/[0.03] text-ink font-medium'
-                            : 'border-black/10 bg-white text-ink/70 hover:border-ink/30 hover:text-ink'
-                    }`}
-                  >
-                    <span
-                      className={`flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center text-xs ${
-                        showResult && opt.correct
-                          ? 'border-emerald-500 bg-emerald-500 text-white'
-                          : showResult && isSelected && !opt.correct
-                            ? 'border-red-400 bg-red-400 text-white'
-                            : isSelected
-                              ? 'border-ink bg-ink text-paper'
-                              : 'border-black/20'
-                      }`}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm overflow-hidden">
+              <div className="relative aspect-[4/3]">
+                {!showChecklistGarden ? (
+                  <div className="absolute inset-0 bg-white p-5 flex flex-col justify-between">
+                    <p className="text-xs uppercase tracking-widest text-ink/60">Version 1</p>
+                    <p className="text-lg font-serif text-ink">Checklist Garden</p>
+                    <button
+                      onClick={() => {
+                        setShowChecklistGarden(true);
+                        setHasViewedChecklistGarden(true);
+                      }}
+                      className="self-start px-3 py-1.5 rounded-lg border border-black/15 bg-white text-[11px] font-medium text-ink hover:bg-black/5"
                     >
-                      {opt.id.toUpperCase()}
-                    </span>
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {glassesMCQ && !glassesMCQSubmitted && (
-              <button
-                onClick={() => setGlassesMCQSubmitted(true)}
-                className="mt-4 px-6 py-2.5 rounded-xl bg-ink text-paper text-sm font-medium hover:bg-ink/85 transition-all"
-              >
-                Submit
-              </button>
-            )}
-
-            {glassesMCQSubmitted && (
-              <motion.div
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 p-4 rounded-xl bg-black/[0.03] text-sm text-ink/80 leading-relaxed"
-              >
-                {glassesMCQOptions.find(o => o.id === glassesMCQ)?.correct ? (
-                  <>
-                    <strong className="text-emerald-700">Exactly.</strong> Noticing the grain,
-                    light, and scratch is fresh-eyes perception — detail before judgment, sensation
-                    before category. The other options start with evaluation or task.
-                  </>
+                      Flip Card
+                    </button>
+                  </div>
                 ) : (
                   <>
-                    <strong className="text-red-700">Not quite.</strong> Option B shows someone
-                    staying with sensation — noticing texture and detail before labeling. The others
-                    jump immediately to evaluation ("old"), task ("wipe it"), or category ("a
-                    table").
+                    <img
+                      src="/Module 4_version1.jpeg"
+                      alt="Checklist garden"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/20" />
+                    <button
+                      onClick={() => setShowChecklistGarden(false)}
+                      className="absolute bottom-4 left-4 px-3 py-1.5 rounded-lg border border-black/15 bg-white/90 text-[11px] font-medium text-ink hover:bg-white"
+                    >
+                      Flip Back
+                    </button>
                   </>
                 )}
-              </motion.div>
-            )}
+              </div>
+              {showChecklistGarden && (
+                <div className="p-4 border-t border-black/5">
+                  <p className="text-sm text-ink/80 leading-relaxed">
+                    When you look at the garden this way, what you see is a series of actions. And
+                    notice that all the tasks are projections of yourself into a future that hasn't
+                    happened yet.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm overflow-hidden">
+              <div className="relative aspect-[4/3]">
+                {!showCuriosityGarden ? (
+                  <div className="absolute inset-0 bg-white p-5 flex flex-col justify-between">
+                    <p className="text-xs uppercase tracking-widest text-ink/60">Version 2</p>
+                    <p className="text-lg font-serif text-ink">Curiosity Garden</p>
+                    <button
+                      onClick={() => {
+                        setShowCuriosityGarden(true);
+                        setHasViewedCuriosityGarden(true);
+                      }}
+                      className="self-start px-3 py-1.5 rounded-lg border border-black/15 bg-white text-[11px] font-medium text-ink hover:bg-black/5"
+                    >
+                      Flip Card
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <img
+                      src="/Module 4_version2.png"
+                      alt="Curiosity garden"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/20" />
+                    <button
+                      onClick={() => setShowCuriosityGarden(false)}
+                      className="absolute bottom-4 left-4 px-3 py-1.5 rounded-lg border border-black/15 bg-white/90 text-[11px] font-medium text-ink hover:bg-white"
+                    >
+                      Flip Back
+                    </button>
+                  </>
+                )}
+              </div>
+              {showCuriosityGarden && (
+                <div className="p-4 border-t border-black/5">
+                  <p className="text-sm text-ink/80 leading-relaxed">
+                    Same garden. Completely different experience. You are spending time in the
+                    present moment.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
-          {glassesMCQSubmitted && (
+          {hasCompletedScenarioCards && (
+            <div className="space-y-3">
+              <p className="font-serif text-[20px] text-ink leading-snug">
+                Psychologists call version 1 the transactional mindset, and it's your brain's
+                default setting.
+              </p>
+
+              <div className="mt-5 space-y-3">
+                <button
+                  onClick={() => setIsSoundFamiliarOpen(v => !v)}
+                  className="inline-flex items-center gap-2.5 px-5 py-3 rounded-xl border border-black/15 bg-white text-[11px] font-semibold uppercase tracking-widest text-ink/80 hover:bg-black/[0.03]"
+                >
+                  <span>Sound Familiar?</span>
+                  <ArrowRight
+                    className={`w-5 h-5 transition-transform ${isSoundFamiliarOpen ? 'rotate-90' : ''}`}
+                  />
+                </button>
+
+                {isSoundFamiliarOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
+                  >
+                    <SoundFamiliar
+                      scenario="Imagine you sit down with your morning coffee before the day begins."
+                      question="What's typically in your mind in that moment?"
+                      options={[
+                        {
+                          id: 'a',
+                          label: "I'm already running through what I need to get done.",
+                        },
+                        {
+                          id: 'b',
+                          label: 'I notice things - the warmth of the mug, the smell, the quiet.',
+                        },
+                        {
+                          id: 'c',
+                          label: 'Honestly, it depends.',
+                        },
+                      ]}
+                      feedback={{
+                        a: "That's the default - and you're not alone. Most of us live here more than we realize. The transactional mindset is the brain's default setting. That's what this module is here to change.",
+                        b: "That's rarer than you might think. Most of us don't, even when we think we do. The transactional mindset is the brain's default setting. That's what this module is here to change.",
+                        c: "That's honest. Most of us swing toward A without noticing. The transactional mindset is the brain's default setting. That's what this module is here to change.",
+                      }}
+                      onSelectOption={setSoundFamiliarSelection}
+                    />
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {hasCompletedScenarioSection && (
             <button
               onClick={goNext}
               className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
@@ -503,7 +484,12 @@ export default function Module4() {
         </motion.div>
       )}
 
-      {/* ─── SECTION 3 — Wonder → Flow ─── */}
+      {/* ─── SECTION 2 — Three Glasses ─── */}
+      {currentSection === 2 && (
+        <ThreeGlassesModulePage onContinue={goNext} />
+      )}
+
+      {/* ─── SECTION 3 — From Wonder to Flow ─── */}
       {currentSection === 3 && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -512,125 +498,158 @@ export default function Module4() {
           className="space-y-8"
         >
           <div>
-            <h2 className="font-serif text-2xl text-ink mb-3">From wonder to flow</h2>
+            <h2 className="font-serif text-2xl text-ink mb-3">From Wonder to Flow</h2>
             <p className="text-sm text-muted leading-relaxed max-w-2xl">
-              When noticing and curiosity sustain long enough, something shifts: you stop managing
-              the experience and start living inside it. That's flow — the state of complete
-              absorption.
+              Wonder gets you to the threshold. But here's what usually happens next: You notice
+              something beautiful. You feel a flash of aliveness. And then your achieving brain
+              jumps back in.
+              <br />
+              "Okay, that was nice. Now what do I need to do?"
             </p>
           </div>
 
-          {/* Two flow types */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-5">
-              <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-3">
-                Simple Flow
-              </p>
-              <p className="text-sm text-ink leading-relaxed mb-3">
-                Absorbed in an activity. Time passes unnoticed. Mind stops narrating. You are just
-                doing.
-              </p>
-              <p className="text-xs text-muted italic">
-                "I looked up and an hour had gone by."
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#6B8F6E]/30 bg-[#E3E8E4]/30 p-5">
-              <p className="text-xs font-semibold text-[#6B8F6E] uppercase tracking-widest mb-3">
-                Peak Flow
-              </p>
-              <p className="text-sm text-ink leading-relaxed mb-3">
-                Transcendent engagement — effortless mastery, heightened clarity, deep connection to
-                the activity. Rare, but remembered.
-              </p>
-              <p className="text-xs text-muted italic">
-                "Everything just... clicked. I forgot I was even there."
-              </p>
-            </div>
-          </div>
-
-          <p className="text-sm text-muted leading-relaxed max-w-2xl">
-            Peak flow is powerful but unpredictable. Simple flow is accessible — and it's a
-            meaningful experience in its own right. Wonder is the doorway to simple flow: when
-            curiosity engages fully, absorption follows.
-          </p>
-
-          {/* MCQ */}
           <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6">
-            <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-1">
-              Quick Check
+            <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-4">
+              The answer is two more designer's mindsets
             </p>
-            <p className="text-sm text-ink font-medium mb-5">
-              Which of these is the best example of <em>simple flow</em>?
-            </p>
-            <div className="space-y-2.5">
-              {flowMCQOptions.map(opt => {
-                const isSelected = flowMCQ === opt.id;
-                const showResult = flowMCQSubmitted;
-                return (
-                  <button
-                    key={opt.id}
-                    disabled={flowMCQSubmitted}
-                    onClick={() => !flowMCQSubmitted && setFlowMCQ(opt.id)}
-                    className={`w-full text-left px-5 py-3.5 rounded-xl border text-sm transition-all flex items-center gap-3 ${
-                      showResult && opt.correct
-                        ? 'border-emerald-400/50 bg-emerald-50/60 text-emerald-900'
-                        : showResult && isSelected && !opt.correct
-                          ? 'border-red-300/50 bg-red-50/60 text-red-800'
-                          : isSelected
-                            ? 'border-ink bg-ink/[0.03] text-ink font-medium'
-                            : 'border-black/10 bg-white text-ink/70 hover:border-ink/30 hover:text-ink'
-                    }`}
-                  >
-                    <span
-                      className={`flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center text-xs ${
-                        showResult && opt.correct
-                          ? 'border-emerald-500 bg-emerald-500 text-white'
-                          : showResult && isSelected && !opt.correct
-                            ? 'border-red-400 bg-red-400 text-white'
-                            : isSelected
-                              ? 'border-ink bg-ink text-paper'
-                              : 'border-black/20'
-                      }`}
-                    >
-                      {opt.id.toUpperCase()}
-                    </span>
-                    {opt.label}
-                  </button>
-                );
-              })}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-xl border border-black/10 bg-black/[0.02] p-4">
+                <p className="text-sm font-semibold text-ink mb-2">Radical Acceptance</p>
+                <ul className="text-xs text-muted space-y-1.5">
+                  <li>→ Fully agree that what you're doing right now is what you're doing.</li>
+                  <li>→ Not a stepping stone. Not something to get through. </li>
+                  <li>→ Say it to yourself: "I am doing this. Period."</li>
+                </ul>
+              </div>
+              <div className="rounded-xl border border-[#6B8F6E]/30 bg-[#E3E8E4]/40 p-4">
+                <p className="text-sm font-semibold text-ink mb-2">Availability</p>
+                <ul className="text-xs text-muted space-y-1.5">
+                  <li>→ Open your senses — what do you hear, feel, notice?</li>
+                  <li>→ What changes as you keep going?</li>
+                  <li>→ Stay in contact with what's actually happening.</li>
+                </ul>
+              </div>
             </div>
+          </div>
 
-            {flowMCQ && !flowMCQSubmitted && (
-              <button
-                onClick={() => setFlowMCQSubmitted(true)}
-                className="mt-4 px-6 py-2.5 rounded-xl bg-ink text-paper text-sm font-medium hover:bg-ink/85 transition-all"
-              >
-                Submit
-              </button>
-            )}
+          <div className="space-y-4">
+            <button
+              onClick={() => setShowFlowNote(v => !v)}
+              className="inline-flex items-center gap-2 rounded-xl border border-black/15 bg-white px-5 py-2.5 text-sm font-medium text-ink transition-all hover:bg-black/[0.03]"
+            >
+              A note on Simple Flow vs. Peak Flow
+            </button>
 
-            {flowMCQSubmitted && (
+            {showFlowNote && (
               <motion.div
-                initial={{ opacity: 0, y: 4 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-4 p-4 rounded-xl bg-black/[0.03] text-sm text-ink/80 leading-relaxed"
+                className="space-y-8"
               >
-                {flowMCQOptions.find(o => o.id === flowMCQ)?.correct ? (
-                  <>
-                    <strong className="text-emerald-700">Yes.</strong> Sanding the shelf describes
-                    simple flow: complete absorption in a physical task, with time passing
-                    unnoticed. No transcendence required — just full, quiet presence. Option A
-                    describes peak flow (effortless mastery). C and D are distraction and
-                    divided attention.
-                  </>
-                ) : (
-                  <>
-                    <strong className="text-red-700">Close, but not quite.</strong> Option B is
-                    simple flow — absorbed in a task without transcendence. Option A is peak flow
-                    (the transcendent variety). C is passive distraction, and D is divided
-                    attention, not absorption.
-                  </>
-                )}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-5">
+                    <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-3">
+                      Simple Flow
+                    </p>
+                    <p className="text-sm text-ink leading-relaxed mb-3">
+                      Absorbed in an activity. Time passes unnoticed. Mind stops narrating. You
+                      are just doing.
+                    </p>
+                    <p className="text-xs text-muted italic">"I looked up and an hour had gone by."</p>
+                  </div>
+                  <div className="rounded-2xl border border-[#6B8F6E]/30 bg-[#E3E8E4]/30 p-5">
+                    <p className="text-xs font-semibold text-[#6B8F6E] uppercase tracking-widest mb-3">
+                      Peak Flow
+                    </p>
+                    <p className="text-sm text-ink leading-relaxed mb-3">
+                      Transcendent engagement — effortless mastery, heightened clarity, deep
+                      connection to the activity. Rare, but remembered.
+                    </p>
+                    <p className="text-xs text-muted italic">
+                      "Everything just... clicked. I forgot I was even there."
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-1">
+                    Quick Check
+                  </p>
+                  <p className="text-sm text-ink font-medium mb-5">
+                    Which of these is the best example of <em>simple flow</em>?
+                  </p>
+                  <div className="space-y-2.5">
+                    {flowMCQOptions.map(opt => {
+                      const isSelected = flowMCQ === opt.id;
+                      const showResult = flowMCQSubmitted;
+                      return (
+                        <button
+                          key={opt.id}
+                          disabled={flowMCQSubmitted}
+                          onClick={() => !flowMCQSubmitted && setFlowMCQ(opt.id)}
+                          className={`w-full text-left px-5 py-3.5 rounded-xl border text-sm transition-all flex items-center gap-3 ${
+                            showResult && opt.correct
+                              ? 'border-emerald-400/50 bg-emerald-50/60 text-emerald-900'
+                              : showResult && isSelected && !opt.correct
+                                ? 'border-red-300/50 bg-red-50/60 text-red-800'
+                                : isSelected
+                                  ? 'border-ink bg-ink/[0.03] text-ink font-medium'
+                                  : 'border-black/10 bg-white text-ink/70 hover:border-ink/30 hover:text-ink'
+                          }`}
+                        >
+                          <span
+                            className={`flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center text-xs ${
+                              showResult && opt.correct
+                                ? 'border-emerald-500 bg-emerald-500 text-white'
+                                : showResult && isSelected && !opt.correct
+                                  ? 'border-red-400 bg-red-400 text-white'
+                                  : isSelected
+                                    ? 'border-ink bg-ink text-paper'
+                                    : 'border-black/20'
+                            }`}
+                          >
+                            {opt.id.toUpperCase()}
+                          </span>
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {flowMCQ && !flowMCQSubmitted && (
+                    <button
+                      onClick={() => setFlowMCQSubmitted(true)}
+                      className="mt-4 px-6 py-2.5 rounded-xl bg-ink text-paper text-sm font-medium hover:bg-ink/85 transition-all"
+                    >
+                      Submit
+                    </button>
+                  )}
+
+                  {flowMCQSubmitted && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-4 p-4 rounded-xl bg-black/[0.03] text-sm text-ink/80 leading-relaxed"
+                    >
+                      {flowMCQOptions.find(o => o.id === flowMCQ)?.correct ? (
+                        <>
+                          <strong className="text-emerald-700">Yes.</strong> Sanding the shelf
+                          describes simple flow: complete absorption in a physical task, with time
+                          passing unnoticed. No transcendence required — just full, quiet presence.
+                          Option A describes peak flow (effortless mastery). C and D are
+                          distraction and divided attention.
+                        </>
+                      ) : (
+                        <>
+                          <strong className="text-red-700">Close, but not quite.</strong> Option
+                          B is simple flow — absorbed in a task without transcendence. Option A is
+                          peak flow (the transcendent variety). C is passive distraction, and D is
+                          divided attention, not absorption.
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </div>
               </motion.div>
             )}
           </div>
@@ -757,127 +776,250 @@ export default function Module4() {
           className="space-y-8"
         >
           <div>
-            <h2 className="font-serif text-2xl text-ink mb-3">Design your wonder experiment</h2>
+            <h2 className="font-serif text-2xl text-ink mb-3">Design your experiment</h2>
             <p className="text-sm text-muted leading-relaxed max-w-2xl">
-              A wonder experiment starts with a question — not a task. Not "I will notice more," but
-              something that sparks curiosity before you even begin.
+              Build one tiny experiment you can actually do today. Keep it simple and specific.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6">
-            <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-1">
-              Examples of wonder questions
-            </p>
-            <ul className="space-y-2 mt-3">
-              {[
-                '"What am I not noticing about my walk to work?"',
-                '"What does this task feel like before I start to judge it?"',
-                '"What\'s one thing about this conversation I\'ve never paid attention to?"',
-              ].map((q, i) => (
-                <li key={i} className="text-sm text-ink/70 italic flex items-start gap-2">
-                  <span className="text-muted mt-0.5">·</span>
-                  {q}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-ink mb-2">
-              Write your wonder question
-            </label>
-            <p className="text-xs text-muted mb-3">
-              What would you most want to see with fresh eyes? Start with "What..."
-            </p>
-            <textarea
-              value={wonderQuestion}
-              onChange={e => setWonderQuestion(e.target.value)}
-              placeholder="What am I missing about..."
-              rows={3}
-              className="w-full rounded-xl border border-black/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/50 resize-none focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink/40 transition-all"
-            />
-            <div className="flex items-center justify-between mt-1.5">
-              <p className="text-xs text-muted/60">{wonderQuestion.length} characters</p>
-            </div>
-          </div>
-
-          {wonderQuestion.trim().length >= 10 && !wonderFeedback && (
-            <button
-              onClick={fetchWonderFeedback}
-              disabled={wonderFeedbackLoading}
-              className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85 disabled:opacity-50"
-            >
-              {wonderFeedbackLoading ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-3.5 h-3.5 border-2 border-paper/30 border-t-paper rounded-full animate-spin" />
-                  Reflecting...
-                </span>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" /> Get reflection
-                </>
-              )}
-            </button>
-          )}
-
-          {wonderFeedback && (
+          {!isTaskConfirmed ? (
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6"
             >
-              <div className="mb-4">
-                <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-2">
-                  Your question
-                </p>
-                <p className="text-sm text-ink/80 italic leading-relaxed">
-                  "{wonderQuestion.trim()}"
-                </p>
-              </div>
-              <FeedbackBlock text={wonderFeedback} />
-
-              {!wonderResonance && (
-                <div className="mt-5 pt-4 border-t border-black/5">
-                  <p className="text-xs text-muted mb-3">Does this reflection resonate?</p>
-                  <div className="flex gap-2">
-                    {['Yes, it does', 'Somewhat', "Not quite"].map(opt => (
-                      <button
-                        key={opt}
-                        onClick={() => setWonderResonance(opt)}
-                        className="px-4 py-2 rounded-xl border border-black/10 bg-white text-xs text-ink/70 hover:border-ink/30 hover:text-ink transition-all"
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {wonderResonance && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mt-4 pt-4 border-t border-black/5"
-                >
-                  <p className="text-xs text-muted">
-                    {wonderResonance === 'Yes, it does'
-                      ? 'Glad it landed. Carry that clarity into your experiment.'
-                      : wonderResonance === 'Somewhat'
-                        ? "That's useful signal too — the question is yours to refine."
-                        : 'No worries. The most important thing is the question you wrote, not the reflection on it.'}
-                  </p>
-                </motion.div>
-              )}
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 1</p>
+              <h3 className="text-xl font-serif text-ink mb-2">Pick a simple, routine task.</h3>
+              <p className="text-sm text-muted leading-relaxed mb-4">
+                Something you do regularly that usually feels like "just a chore." 5-15 minutes.
+              </p>
+              <input
+                value={experimentTask}
+                onChange={e => setExperimentTask(e.target.value)}
+                placeholder="e.g. doing the dishes, folding laundry, making coffee"
+                className="w-full rounded-xl border border-black/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink/40 transition-all"
+              />
+              <button
+                onClick={() => {
+                  setIsTaskConfirmed(true);
+                  setChoreTask('other');
+                }}
+                disabled={!experimentTask.trim()}
+                className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                This is my task →
+              </button>
             </motion.div>
+          ) : (
+            <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6 opacity-75">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 1</p>
+                  <h3 className="text-xl font-serif text-ink">Pick a simple, routine task.</h3>
+                  <p className="mt-2 text-sm text-ink/80">{experimentTask}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsTaskConfirmed(false);
+                    setIsCommitConfirmed(false);
+                    setIsSenseConfirmed(false);
+                    setIsWonderQuestionConfirmed(false);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-black/15 bg-white px-3 py-1.5 text-xs text-ink/80 hover:bg-black/[0.03]"
+                >
+                  <Pencil className="w-3.5 h-3.5" /> Edit
+                </button>
+              </div>
+            </div>
           )}
 
-          {wonderResonance && (
-            <button
-              onClick={goNext}
-              className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
-            >
-              Continue <ArrowRight className="w-4 h-4" />
-            </button>
+          {isTaskConfirmed && (
+            isCommitConfirmed ? (
+              <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6 opacity-75">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 2</p>
+                    <h3 className="text-xl font-serif text-ink mb-3">Make your commitment.</h3>
+                    <blockquote className="rounded-2xl border border-[#D9C9A8]/40 bg-[#FAF2E3] px-6 py-5 text-center text-lg leading-relaxed text-ink font-serif">
+                      "I am doing {experimentTask}. Period. No multitasking, no podcast, no phone."
+                    </blockquote>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsCommitConfirmed(false);
+                      setIsSenseConfirmed(false);
+                      setIsWonderQuestionConfirmed(false);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg border border-black/15 bg-white px-3 py-1.5 text-xs text-ink/80 hover:bg-black/[0.03]"
+                  >
+                    <Pencil className="w-3.5 h-3.5" /> Edit
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6"
+              >
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 2</p>
+                <h3 className="text-xl font-serif text-ink mb-3">Make your commitment.</h3>
+                <blockquote className="rounded-2xl border border-[#D9C9A8]/40 bg-[#FAF2E3] px-6 py-5 text-center text-lg leading-relaxed text-ink font-serif">
+                  "I am doing {experimentTask}. Period. No multitasking, no podcast, no phone."
+                </blockquote>
+                <button
+                  onClick={() => setIsCommitConfirmed(true)}
+                  className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
+                >
+                  I commit →
+                </button>
+              </motion.div>
+            )
+          )}
+
+          {isTaskConfirmed && isCommitConfirmed && (
+            isSenseConfirmed ? (
+              <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6 opacity-75">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 3</p>
+                    <h3 className="text-xl font-serif text-ink mb-2">Pick your curiosity entry point.</h3>
+                    <p className="text-sm text-muted mb-3">What sense will you lead with?</p>
+                    <p className="text-sm text-ink/80">
+                      {selectedSenseMeta.map(s => `${s.emoji} ${s.title}`).join(' · ')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsSenseConfirmed(false);
+                      setIsWonderQuestionConfirmed(false);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg border border-black/15 bg-white px-3 py-1.5 text-xs text-ink/80 hover:bg-black/[0.03]"
+                  >
+                    <Pencil className="w-3.5 h-3.5" /> Edit
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6"
+              >
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 3</p>
+                <h3 className="text-xl font-serif text-ink mb-2">Pick your curiosity entry point.</h3>
+                <p className="text-sm text-muted mb-4">What sense will you lead with?</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {curiositySenseOptions.map(option => {
+                    const isSelected = selectedCuriositySenses.includes(option.id);
+                    return (
+                      <button
+                        key={option.id}
+                        onClick={() => {
+                          setSelectedCuriositySenses(prev =>
+                            prev.includes(option.id)
+                              ? prev.filter(id => id !== option.id)
+                              : [...prev, option.id],
+                          );
+                        }}
+                        className={`rounded-2xl border p-4 text-left transition-all ${
+                          isSelected
+                            ? 'border-ink bg-ink/[0.04] text-ink'
+                            : selectedCuriositySenses.length > 0
+                              ? 'border-black/10 bg-white text-ink/45'
+                              : 'border-black/10 bg-white text-ink/80 hover:border-ink/30'
+                        }`}
+                      >
+                        <p className="text-lg mb-1">
+                          {option.emoji} <span className="font-semibold text-base">{option.title}</span>
+                        </p>
+                        <p className="text-sm leading-relaxed">{option.text}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedCuriositySenses.length > 0 && (
+                  <button
+                    onClick={() => setIsSenseConfirmed(true)}
+                    className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
+                  >
+                    Got it →
+                  </button>
+                )}
+              </motion.div>
+            )
+          )}
+
+          {isTaskConfirmed && isCommitConfirmed && isSenseConfirmed && (
+            isWonderQuestionConfirmed ? (
+              <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6 opacity-75">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 4</p>
+                    <h3 className="text-xl font-serif text-ink mb-2">What might you wonder about?</h3>
+                    <p className="text-sm text-muted mb-3">
+                      One question that goes beyond "how do I get this done?"
+                    </p>
+                    <p className="text-sm text-ink/80">{wonderQuestion}</p>
+                  </div>
+                  <button
+                    onClick={() => setIsWonderQuestionConfirmed(false)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-black/15 bg-white px-3 py-1.5 text-xs text-ink/80 hover:bg-black/[0.03]"
+                  >
+                    <Pencil className="w-3.5 h-3.5" /> Edit
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6"
+              >
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 4</p>
+                <h3 className="text-xl font-serif text-ink mb-2">What might you wonder about?</h3>
+                <p className="text-sm text-muted mb-4">
+                  One question that goes beyond "how do I get this done?"
+                </p>
+                <input
+                  value={wonderQuestion}
+                  onChange={e => setWonderQuestion(e.target.value)}
+                  placeholder={wonderQuestionPlaceholders[wonderPlaceholderIndex]}
+                  className="w-full rounded-xl border border-black/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink/40 transition-all"
+                />
+                <button
+                  onClick={() => setIsWonderQuestionConfirmed(true)}
+                  disabled={!wonderQuestion.trim()}
+                  className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  This is my question →
+                </button>
+              </motion.div>
+            )
+          )}
+
+          {isWonderQuestionConfirmed && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+              <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6">
+                <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-4">Your experiment</p>
+                <div className="space-y-2.5 text-sm text-ink/90 leading-relaxed">
+                  <p>🗂 Task: {experimentTask}</p>
+                  <p>💬 Commitment: "I am doing {experimentTask}. Period."</p>
+                  <p>
+                    Curiosity entry:{' '}
+                    {selectedSenseMeta.map(s => `${s.emoji} ${s.title}`).join(' · ')}
+                  </p>
+                  <p>❓ Wonder question: {wonderQuestion}</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted">Go try it. Come back when you're done.</p>
+              <button
+                onClick={goNext}
+                className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
+              >
+                Done →
+              </button>
+            </motion.div>
           )}
         </motion.div>
       )}

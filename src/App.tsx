@@ -14,6 +14,7 @@ import Module5 from './pages/Module5';
 import Module from './pages/Module';
 import Reflection from './pages/Reflection';
 import Journal from './pages/Journal';
+import JournalM4 from './pages/JournalM4';
 import { JournalProvider } from './context/JournalContext';
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="module/:id" element={<Module />} />
             <Route path="reflection/:id" element={<Reflection />} />
             <Route path="journal" element={<Journal />} />
+            <Route path="journal/m4" element={<JournalM4 />} />
           </Route>
         </Routes>
       </JournalProvider>
