@@ -350,7 +350,7 @@ export default function Module4() {
                 ) : (
                   <>
                     <img
-                      src="/Module 4_version1.jpeg"
+                      src="/M4-2 checklist gardern.png"
                       alt="Checklist garden"
                       className="absolute inset-0 w-full h-full object-cover"
                     />
@@ -394,7 +394,7 @@ export default function Module4() {
                 ) : (
                   <>
                     <img
-                      src="/Module 4_version2.png"
+                      src="/M4-2 curiousity gardern.png"
                       alt="Curiosity garden"
                       className="absolute inset-0 w-full h-full object-cover"
                     />
