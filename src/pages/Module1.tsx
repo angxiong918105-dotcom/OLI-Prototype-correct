@@ -260,8 +260,9 @@ export default function Module1() {
       meaningRating: sliderValue,
       selectedSignals: allSignals,
       reflectionText: storyNote || undefined,
+      mcqResults: wickedAnswer !== null ? { wicked: wickedAnswer === 'B' } : undefined,
     };
-  }, [selectedSignals, customSignal, sliderValue, storyNote]);
+  }, [selectedSignals, customSignal, sliderValue, storyNote, wickedAnswer]);
 
   const saveReflectionAndContinue = async () => {
     setSaving(true);

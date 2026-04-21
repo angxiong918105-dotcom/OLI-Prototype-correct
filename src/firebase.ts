@@ -211,6 +211,12 @@ function toJournalEntry(id: string, data: Record<string, unknown>): JournalEntry
     reflectionText:
       typeof data.reflectionText === "string" ? data.reflectionText : undefined,
     aiResponse: typeof data.aiResponse === "string" ? data.aiResponse : undefined,
+    mcqResults:
+      data.mcqResults !== null &&
+      typeof data.mcqResults === "object" &&
+      !Array.isArray(data.mcqResults)
+        ? (data.mcqResults as Record<string, boolean>)
+        : undefined,
   };
 }
 
@@ -232,6 +238,7 @@ function toJournalEntryWritePayload(entry: JournalEntry) {
     selectedSignals: entry.selectedSignals ?? [],
     reflectionText: entry.reflectionText ?? null,
     aiResponse: entry.aiResponse ?? null,
+    mcqResults: entry.mcqResults ?? null,
     updatedAt: serverTimestamp(),
   };
 }

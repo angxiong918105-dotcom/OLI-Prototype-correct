@@ -220,6 +220,10 @@ export default function Module4() {
       moduleTitle: 'From Wonder to Flow',
       selectedSignals: newScenarioText ? [newScenarioText] : [],
       reflectionText: parts.join('\n') || undefined,
+      mcqResults: {
+        ...(glassesMCQSubmitted && glassesMCQ ? { glasses: glassesMCQ === 'b' } : {}),
+        ...(flowMCQSubmitted && flowMCQ ? { flow: flowMCQ === 'b' } : {}),
+      },
     });
 
     navigate('/');

@@ -192,6 +192,10 @@ export default function Module3() {
         ? [fritzOptions.find(o => o.id === fritzType)?.label ?? '']
         : [],
       reflectionText: parts.join('\n') || undefined,
+      mcqResults: {
+        ...(page2MCQSubmitted && page2MCQ ? { flow_world: page2MCQ === 'b' } : {}),
+        ...(page3MCQSubmitted && page3MCQ ? { fritz: page3MCQ === 'b' } : {}),
+      },
     });
 
     navigate('/');

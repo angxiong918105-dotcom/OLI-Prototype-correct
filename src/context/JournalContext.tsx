@@ -123,6 +123,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
         selectedSignals: payload.selectedSignals,
         reflectionText: payload.reflectionText,
         aiResponse,
+        mcqResults: payload.mcqResults,
       };
 
       // Update local state immediately
@@ -196,6 +197,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
         selectedSignals: payload.selectedSignals,
         reflectionText: payload.reflectionText,
         aiResponse: shouldRefreshFeedback ? aiResponse : currentEntry.aiResponse,
+        mcqResults: payload.mcqResults ?? currentEntry.mcqResults,
       };
 
       try {

@@ -148,6 +148,9 @@ export default function Module5() {
       moduleTitle: 'Build a Personal Compass',
       selectedSignals: activeValues,
       reflectionText: parts.join('\n') || undefined,
+      mcqResults: compassMCQSubmitted && compassMCQ
+        ? { compass: compassMCQ === 'b' }
+        : undefined,
     });
 
     navigate('/');

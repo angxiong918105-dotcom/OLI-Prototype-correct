@@ -30,29 +30,35 @@ interface ExperimentStep {
 function deriveConceptMastery(entries: JournalEntry[]): ConceptItem[] {
   const completedIds = new Set(entries.map((e) => e.moduleId));
 
-  function assess(related: string[]): { stage: ConceptStage; progress: number } {
+  // Merge mcqResults across all entries into one map
+  const allMCQ: Record<string, boolean> = {};
+  for (const e of entries) {
+    if (e.mcqResults) Object.assign(allMCQ, e.mcqResults);
+  }
+
+  function assess(
+    related: string[],
+    mcqKeys: string[],
+  ): { stage: ConceptStage; progress: number } {
     const done = related.filter((id) => completedIds.has(id)).length;
     const total = related.length;
 
     if (done === 0) return { stage: 'Not Started', progress: 0 };
     if (done < total) return { stage: 'Emerging', progress: 30 };
 
-    const hasDeep = entries.some(
-      (e) =>
-        related.includes(e.moduleId) &&
-        e.reflectionText &&
-        e.reflectionText.length > 30,
-    );
-    return hasDeep
+    // All related modules complete — check MCQ correctness
+    const attempted = mcqKeys.filter((k) => k in allMCQ);
+    const allCorrect = attempted.length > 0 && attempted.every((k) => allMCQ[k] === true);
+    return allCorrect
       ? { stage: 'Applying', progress: 100 }
       : { stage: 'Developing', progress: 65 };
   }
 
   return [
-    { name: 'Pattern Observation', ...assess(['intro', 'observe']) },
-    { name: 'Flow vs Coherence', ...assess(['reframe', 'branching']) },
-    { name: 'Experiment Design', ...assess(['ideate']) },
-    { name: 'Meaning Reflection', ...assess(['observe', 'branching', 'ideate']) },
+    { name: 'Pattern Observation', ...assess(['intro', 'observe'], ['wicked', 'flow_world', 'fritz']) },
+    { name: 'Flow vs Coherence', ...assess(['reframe', 'branching'], ['glasses', 'flow']) },
+    { name: 'Experiment Design', ...assess(['ideate'], ['compass']) },
+    { name: 'Meaning Reflection', ...assess(['observe', 'branching', 'ideate'], ['flow_world', 'fritz', 'glasses', 'flow', 'compass']) },
   ];
 }
 

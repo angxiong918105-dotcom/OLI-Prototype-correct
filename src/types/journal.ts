@@ -7,6 +7,7 @@ export type JournalEntry = {
   selectedSignals?: string[];
   reflectionText?: string;
   aiResponse?: string;
+  mcqResults?: Record<string, boolean>;
 };
 
 export type ReflectionPayload = {
@@ -15,6 +16,7 @@ export type ReflectionPayload = {
   meaningRating?: number;
   selectedSignals?: string[];
   reflectionText?: string;
+  mcqResults?: Record<string, boolean>;
 };
 
 export type FeedbackResponse = {
