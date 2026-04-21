@@ -3,6 +3,7 @@ import { Sparkles, ArrowRight, Check, Circle, BookOpen, Brain } from 'lucide-rea
 import { Link } from 'react-router-dom';
 import type { JournalEntry } from '../types/journal';
 import { modules } from '../data/modules';
+import { useOnboarding, onboardingPathPlans, type OnboardingPath } from '../context/OnboardingContext';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -16,12 +17,6 @@ interface ConceptItem {
   progress: number; // 0-100
 }
 
-interface ExperimentStep {
-  label: string;
-  description: string;
-  completed: boolean;
-  evidence?: string;
-}
 
 /* ------------------------------------------------------------------ */
 /*  Data derivation helpers                                            */
@@ -74,46 +69,6 @@ function deriveLearningActivity(entries: JournalEntry[]) {
   };
 }
 
-function deriveExperimentEvidence(entries: JournalEntry[]): ExperimentStep[] {
-  const ids = new Set(entries.map((e) => e.moduleId));
-  const signals = entries.filter(
-    (e) => e.selectedSignals && e.selectedSignals.length > 0,
-  );
-
-  return [
-    {
-      label: 'Patterns Observed',
-      description: 'Identify meaningful signals in daily life',
-      completed: ids.has('observe') || signals.length > 0,
-      evidence:
-        signals.length > 0
-          ? `${signals.reduce((s, e) => s + (e.selectedSignals?.length ?? 0), 0)} signals identified`
-          : undefined,
-    },
-    {
-      label: 'Direction Chosen',
-      description: 'Choose between flow and coherence paths',
-      completed: ids.has('branching'),
-      evidence: ids.has('branching')
-        ? 'Exploration direction selected'
-        : undefined,
-    },
-    {
-      label: 'Experiment Action',
-      description: 'Design and commit to your next meaning step',
-      completed: ids.has('ideate'),
-      evidence: ids.has('ideate') ? 'Personal compass drafted' : undefined,
-    },
-    {
-      label: 'Meaning Reflection',
-      description: 'Reflect on what you learned about meaning',
-      completed: entries.some((e) => Boolean(e.reflectionText?.trim())),
-      evidence: entries.some((e) => Boolean(e.reflectionText?.trim()))
-        ? 'Reflection recorded'
-        : undefined,
-    },
-  ];
-}
 
 function deriveSuggestedNextStep(entries: JournalEntry[]) {
   const ids = new Set(entries.map((e) => e.moduleId));
@@ -346,88 +301,99 @@ function LearningActivity({ entries }: { entries: JournalEntry[] }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  3 · Meaning Experiment Evidence                                    */
+/*  3 · Your Learning Path                                             */
 /* ------------------------------------------------------------------ */
 
-function MeaningExperimentEvidence({ entries }: { entries: JournalEntry[] }) {
-  const stages = deriveExperimentEvidence(entries);
-  const completedCount = stages.filter((s) => s.completed).length;
+const PATH_META: Record<OnboardingPath, { label: string; description: string }> = {
+  flow:      { label: 'Flow',      description: 'Discovering flow in everyday moments' },
+  coherency: { label: 'Coherency', description: 'Creating a more coherent life' },
+  both:      { label: 'Both',      description: 'Explore the full course' },
+};
+
+function LearningPath({ entries }: { entries: JournalEntry[] }) {
+  const { path } = useOnboarding();
+  const completedIds = new Set(entries.map((e) => e.moduleId));
+
+  if (!path) {
+    return (
+      <Card>
+        <Label>Your Learning Path</Label>
+        <p className="text-[13px] text-muted/55 mt-4 leading-relaxed">
+          Complete onboarding to see your path.
+        </p>
+      </Card>
+    );
+  }
+
+  const meta = PATH_META[path];
+  const moduleNumbers = onboardingPathPlans[path];
+  const pathModules = moduleNumbers
+    .map((n) => modules.find((m) => m.number === n))
+    .filter(Boolean) as typeof modules;
+
+  const firstIncompleteIdx = pathModules.findIndex((m) => !completedIds.has(m.id));
 
   return (
     <Card>
       <div className="flex items-start justify-between">
         <div>
-          <Label>Meaning Experiment Evidence</Label>
-          <p className="text-[11px] text-muted/60 mt-1">
-            Your learning journey: observe → choose → experiment → reflect
-          </p>
+          <Label>Your Learning Path</Label>
+          <p className="text-[11px] text-muted/60 mt-1">{meta.description}</p>
         </div>
-        <span className="text-[10px] text-muted/55 tabular-nums shrink-0">
-          {completedCount} of {stages.length} modules
+        <span className="text-[10px] font-semibold text-[#5A7D5C] bg-[#6B8F6E]/[0.08] px-2 py-0.5 rounded-full shrink-0">
+          {meta.label}
         </span>
       </div>
 
       <div className="relative mt-4">
-        {/* Vertical connecting line */}
         <div className="absolute left-[11px] top-4 bottom-4 w-px bg-black/[0.06]" />
 
         <div className="space-y-0.5">
-          {stages.map((s, i) => (
-            <div
-              key={s.label}
-              className={`flex items-start gap-3 relative py-2.5 px-2 -mx-2 rounded-lg transition-colors ${
-                !s.completed && i === completedCount ? 'bg-[#6B8F6E]/[0.04]' : ''
-              }`}
-            >
-              {/* Circle */}
+          {pathModules.map((mod, i) => {
+            const done = completedIds.has(mod.id);
+            const isCurrent = !done && i === firstIncompleteIdx;
+
+            return (
               <div
-                className={`w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0 relative z-10 transition-all ${
-                  s.completed
-                    ? 'bg-[#6B8F6E] shadow-sm shadow-[#6B8F6E]/20'
-                    : i === completedCount
-                      ? 'bg-paper border-2 border-[#6B8F6E]/40 ring-2 ring-[#6B8F6E]/10'
-                      : 'bg-paper border-2 border-black/[0.08]'
+                key={mod.id}
+                className={`flex items-center gap-3 relative py-2.5 px-2 -mx-2 rounded-lg transition-colors ${
+                  isCurrent ? 'bg-[#6B8F6E]/[0.04]' : ''
                 }`}
               >
-                {s.completed ? (
-                  <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                ) : (
-                  <span className={`text-[8px] font-bold ${
-                    i === completedCount ? 'text-[#6B8F6E]/60' : 'text-muted/55'
-                  }`}>{i + 1}</span>
+                <div
+                  className={`w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0 relative z-10 transition-all ${
+                    done
+                      ? 'bg-[#6B8F6E] shadow-sm shadow-[#6B8F6E]/20'
+                      : isCurrent
+                        ? 'bg-paper border-2 border-[#6B8F6E]/40 ring-2 ring-[#6B8F6E]/10'
+                        : 'bg-paper border-2 border-black/[0.08]'
+                  }`}
+                >
+                  {done ? (
+                    <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                  ) : (
+                    <span className={`text-[8px] font-bold ${isCurrent ? 'text-[#6B8F6E]/60' : 'text-muted/55'}`}>
+                      {i + 1}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[13px] leading-snug font-medium ${
+                    done ? 'text-ink' : isCurrent ? 'text-ink/70' : 'text-muted/45'
+                  }`}>
+                    {mod.title}
+                  </p>
+                </div>
+
+                {isCurrent && (
+                  <span className="text-[9px] font-medium text-[#6B8F6E]/70 bg-[#6B8F6E]/[0.08] px-1.5 py-0.5 rounded-full shrink-0">
+                    Next
+                  </span>
                 )}
               </div>
-
-              {/* Text */}
-              <div className="flex-1 min-w-0">
-                <p
-                  className={`text-[13px] leading-snug font-medium ${
-                    s.completed ? 'text-ink' : i === completedCount ? 'text-ink/70' : 'text-muted/55'
-                  }`}
-                >
-                  {s.label}
-                </p>
-                <p
-                  className={`text-[11px] mt-0.5 ${
-                    s.evidence
-                      ? 'text-[#6B8F6E] font-medium'
-                      : i === completedCount
-                        ? 'text-muted/60'
-                        : 'text-muted/55'
-                  }`}
-                >
-                  {s.evidence ?? (s.completed ? s.description : `Not yet — ${s.description.toLowerCase()}`)}
-                </p>
-              </div>
-
-              {/* Status indicator */}
-              {!s.completed && i === completedCount && (
-                <span className="text-[9px] font-medium text-[#6B8F6E]/70 bg-[#6B8F6E]/[0.08] px-1.5 py-0.5 rounded-full shrink-0 mt-0.5">
-                  Next
-                </span>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </Card>
@@ -488,7 +454,7 @@ export default function OLMDashboard({ entries }: { entries: JournalEntry[] }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ConceptMastery entries={entries} />
         <LearningActivity entries={entries} />
-        <MeaningExperimentEvidence entries={entries} />
+        <LearningPath entries={entries} />
         <SuggestedNextStep entries={entries} />
       </div>
     </section>
