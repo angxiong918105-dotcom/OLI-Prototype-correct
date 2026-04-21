@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useJournal } from '../context/JournalContext';
@@ -79,22 +79,22 @@ const billStages = [
   {
     label: 'Stage 1 — Acceptance',
     text:
-      'To transform this mundane chore into a simple flow experience, we must first choose to accept that what we\'re doing now is chopping onions. Period. We are a single-minded, 100 percent focused, dedicated, calm, and methodical onion chopper. No more, no less.',
+      '"To transform this mundane chore into a simple flow experience, we must first choose to accept that what we\'re doing now is chopping onions. Period. We are a single-minded, 100 percent focused, dedicated, calm, and methodical onion chopper. No more, no less."',
   },
   {
     label: 'Stage 2 — Curiosity Glasses',
     text:
-      'Get out the onions, clean off a good-size cutting board, pull out your best kitchen knife. Lay them all out and just look at everything. Pick each item up and feel it. These onions, this board, and this knife are your whole world for the next ten to fifteen minutes.',
+      '"Get out the onions, clean off a good-size cutting board, pull out your best kitchen knife. Lay them all out and just look at everything. Pick each item up and feel it. These onions, this board, and this knife are your whole world for the next ten to fifteen minutes."',
   },
   {
     label: 'Stage 3 — Wonder Glasses',
     text:
-      'Spend a moment appreciating what brought each object to this moment. Those onions were grown by farmers, harvested, transported, picked out and brought by you to this cutting board. The knife — begun as ore deep in the earth, mined, smelted, cast, forged, and ground — has travelled far to feel so good in your hand right now.',
+      '"Spend a moment appreciating what brought each object to this moment. Those onions were grown by farmers, harvested, transported, picked out and brought by you to this cutting board. The knife — begun as ore deep in the earth, mined, smelted, cast, forged, and ground — has travelled far to feel so good in your hand right now."',
   },
   {
     label: 'Stage 4 — Simple Flow',
     text:
-      'You begin cutting. After the fifteenth slice, you start to feel a rhythm. You lean in, tilting your ear to the board to hear the sound as the blade crunches through the onion. Seventeen minutes have gone by — but it seemed like an hour. Or was it just thirty seconds? Nothing much has happened. And yet… you feel rather wonderful.',
+      '"You begin cutting. After the fifteenth slice, you start to feel a rhythm. You lean in, tilting your ear to the board to hear the sound as the blade crunches through the onion. Seventeen minutes have gone by — but it seemed like an hour. Or was it just thirty seconds? Nothing much has happened. And yet… you feel rather wonderful."',
   },
 ];
 
@@ -130,6 +130,18 @@ export default function Module4() {
   const [flowMCQ, setFlowMCQ] = useState<string | null>(null);
   const [flowMCQSubmitted, setFlowMCQSubmitted] = useState(false);
   const [showFlowNote, setShowFlowNote] = useState(false);
+  const [showFlowBridge, setShowFlowBridge] = useState(false);
+  const [acceptanceFlipped, setAcceptanceFlipped] = useState(false);
+  const [availabilityFlipped, setAvailabilityFlipped] = useState(false);
+
+  useEffect(() => {
+    if (!availabilityFlipped) {
+      setShowFlowBridge(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowFlowBridge(true), 1000);
+    return () => clearTimeout(timer);
+  }, [availabilityFlipped]);
 
   // Section 4 — Bill's worked example (stages revealed one at a time)
   const [billStage, setBillStage] = useState(1);
@@ -501,32 +513,83 @@ export default function Module4() {
               The answer is two more designer's mindsets
             </p>
             <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-xl border border-black/10 bg-black/[0.02] p-4">
-                <p className="text-sm font-semibold text-ink mb-2">Radical Acceptance</p>
-                <ul className="text-xs text-muted space-y-1.5">
-                  <li>→ Fully agree that what you're doing right now is what you're doing.</li>
-                  <li>→ Not a stepping stone. Not something to get through. </li>
-                  <li>→ Say it to yourself: "I am doing this. Period."</li>
-                </ul>
-              </div>
-              <div className="rounded-xl border border-[#6B8F6E]/30 bg-[#E3E8E4]/40 p-4">
-                <p className="text-sm font-semibold text-ink mb-2">Availability</p>
-                <ul className="text-xs text-muted space-y-1.5">
-                  <li>→ Open your senses — what do you hear, feel, notice?</li>
-                  <li>→ What changes as you keep going?</li>
-                  <li>→ Stay in contact with what's actually happening.</li>
-                </ul>
-              </div>
+              <button
+                type="button"
+                onClick={() => setAcceptanceFlipped(v => !v)}
+                className="group relative rounded-xl border border-black/10 bg-black/[0.02] p-4 text-left min-h-[140px] flex transition-all hover:border-black/20 hover:bg-black/[0.04]"
+              >
+                {!acceptanceFlipped ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center">
+                    <p className="text-base font-semibold text-ink">Radical Acceptance</p>
+                    <p className="text-[10px] uppercase tracking-widest text-muted mt-2">Click to flip</p>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center">
+                    <ul className="text-xs text-muted space-y-1.5">
+                      <li>→ Fully agree that what you're doing right now is what you're doing.</li>
+                      <li>→ Not a stepping stone. Not something to get through. </li>
+                      <li>→ Say it to yourself: "I am doing this. Period."</li>
+                    </ul>
+                  </div>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setAvailabilityFlipped(v => !v)}
+                className="group relative rounded-xl border border-[#6B8F6E]/30 bg-[#E3E8E4]/40 p-4 text-left min-h-[140px] flex transition-all hover:border-[#6B8F6E]/50 hover:bg-[#E3E8E4]/60"
+              >
+                {!availabilityFlipped ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center">
+                    <p className="text-base font-semibold text-ink">Availability</p>
+                    <p className="text-[10px] uppercase tracking-widest text-muted mt-2">Click to flip</p>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center">
+                    <ul className="text-xs text-muted space-y-1.5">
+                      <li>→ Open your senses — what do you hear, feel, notice?</li>
+                      <li>→ What changes as you keep going?</li>
+                      <li>→ Stay in contact with what's actually happening.</li>
+                    </ul>
+                  </div>
+                )}
+              </button>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <button
-              onClick={() => setShowFlowNote(v => !v)}
-              className="inline-flex items-center gap-2 rounded-xl border border-black/15 bg-white px-5 py-2.5 text-sm font-medium text-ink transition-all hover:bg-black/[0.03]"
+          {showFlowBridge && (
+            <motion.p
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="font-serif text-ink leading-relaxed text-left py-2"
+              style={{ fontSize: '18px' }}
             >
-              A note on Simple Flow vs. Peak Flow
-            </button>
+              Together, acceptance and availability do something remarkable: they make simple flow available to you, anytime, in almost any task.
+            </motion.p>
+          )}
+
+          <div className="space-y-4">
+            {showFlowBridge && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+                className="flex flex-wrap items-center gap-3"
+              >
+                <button
+                  onClick={() => setShowFlowNote(v => !v)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-black/15 bg-white px-5 py-2.5 text-sm font-medium text-ink transition-all hover:bg-black/[0.03]"
+                >
+                  What is simple flow?
+                </button>
+                <button
+                  onClick={goNext}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
+                >
+                  Continue <ArrowRight className="w-4 h-4" />
+                </button>
+              </motion.div>
+            )}
 
             {showFlowNote && (
               <motion.div
@@ -534,6 +597,15 @@ export default function Module4() {
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-8"
               >
+                <p className="text-sm text-muted leading-relaxed max-w-2xl pt-6">
+                  You may have heard of flow states, the feeling of being completely absorbed in a
+                  challenging activity where time disappears. That's Peak Flow, and it's real. But
+                  it requires high skill and the right conditions. It's rare.
+                  <br />
+                  <br />
+                  Simple Flow is different.
+                </p>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-5">
                     <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-3">
@@ -561,7 +633,7 @@ export default function Module4() {
 
                 <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6">
                   <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-1">
-                    Quick Check
+                    Concept Check
                   </p>
                   <p className="text-sm text-ink font-medium mb-5">
                     Which of these is the best example of <em>simple flow</em>?
@@ -638,18 +710,22 @@ export default function Module4() {
                     </motion.div>
                   )}
                 </div>
+
+                {flowMCQSubmitted && (
+                  <motion.button
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    onClick={goNext}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
+                  >
+                    Continue <ArrowRight className="w-4 h-4" />
+                  </motion.button>
+                )}
               </motion.div>
             )}
           </div>
 
-          {flowMCQSubmitted && (
-            <button
-              onClick={goNext}
-              className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
-            >
-              Continue <ArrowRight className="w-4 h-4" />
-            </button>
-          )}
         </motion.div>
       )}
 
@@ -664,7 +740,9 @@ export default function Module4() {
           <div>
             <h2 className="font-serif text-2xl text-ink mb-3">Bill's meaning experiment</h2>
             <p className="text-sm text-muted leading-relaxed max-w-2xl">
-              See how the full pipeline works in practice.
+              Let's look at a real scenario from the author of this book. See how Bill turns
+              something ordinary, chopping onions, into a meaningful experience, and how he
+              discovers a state of simple flow in the process.
             </p>
           </div>
 
@@ -703,17 +781,11 @@ export default function Module4() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-4"
             >
-              <div className="rounded-2xl border border-[#6B8F6E]/30 bg-[#E3E8E4]/30 p-5">
-                <p className="text-sm text-ink leading-relaxed">
-                  Now it's your turn. This is your version 1 prototype — low stakes, short
-                  duration.
-                </p>
-              </div>
               <button
                 onClick={goNext}
                 className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
               >
-                Start my experiment <ArrowRight className="w-4 h-4" />
+                Start my own experiment <ArrowRight className="w-4 h-4" />
               </button>
             </motion.div>
           )}
