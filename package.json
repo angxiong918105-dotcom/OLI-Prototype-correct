@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n web,api -c green,cyan \"npm run dev:web\" \"npm run server\"",
-    "dev:web": "vite --port=3000 --host=0.0.0.0",
+    "dev": "vite --port=5173 --host=0.0.0.0",
+    "dev:web": "vite --port=5173 --host=0.0.0.0",
     "server": "tsx server/api.ts",
     "build": "vite build",
     "preview": "vite preview",

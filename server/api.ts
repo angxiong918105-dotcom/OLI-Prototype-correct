@@ -235,7 +235,21 @@ app.post('/api/feedback', async (req, res) => {
 
 // ─── Start ───────────────────────────────────────────────────────────────────
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Reflection API server running on port ${PORT}`);
-});
+export { app };
+
+// Only start a standalone HTTP listener when this file is executed directly
+// (e.g. `tsx server/api.ts`). During `vite dev` the app is mounted as
+// middleware on the Vite dev server (see vite.config.ts), so no separate
+// port is opened.
+const isDirectRun =
+  typeof process !== 'undefined' &&
+  Array.isArray(process.argv) &&
+  process.argv[1] &&
+  /server[\\/]api\.ts$/.test(process.argv[1]);
+
+if (isDirectRun) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`Reflection API server running on port ${PORT}`);
+  });
+}

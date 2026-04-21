@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ArrowRight, CheckCircle2, Pencil } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useJournal } from '../context/JournalContext';
 import { motion } from 'motion/react';
@@ -13,8 +13,8 @@ const sections = [
   'Scenario',
   'Three Glasses',
   'Are You Seeing?',
-  'The Onion Story',
-  'Design Experiment',
+  'Worked Example',
+  'Your Experiment',
   'Summary',
 ];
 
@@ -67,15 +67,6 @@ const flowMCQOptions = [
   },
 ];
 
-const choreOptions = [
-  { id: 'dishes', label: 'Washing the dishes' },
-  { id: 'commute', label: 'My morning commute' },
-  { id: 'cooking', label: 'Cooking a meal' },
-  { id: 'folding', label: 'Folding laundry' },
-  { id: 'walking', label: 'Walking between places' },
-  { id: 'other', label: 'Something else I do on autopilot' },
-];
-
 const pipelineSteps = [
   { label: 'Wonder Seed', sub: 'A question or intention' },
   { label: 'Noticing', sub: 'Fresh-eyes attention' },
@@ -84,37 +75,35 @@ const pipelineSteps = [
   { label: 'Meaning Moment', sub: 'Intrinsic, alive' },
 ];
 
-const curiositySenseOptions = [
+const billStages = [
   {
-    id: 'sight',
-    emoji: '👁',
-    title: 'Sight',
-    text: 'What does it actually look like, up close?',
+    label: 'Stage 1 — Acceptance',
+    text:
+      'To transform this mundane chore into a simple flow experience, we must first choose to accept that what we\'re doing now is chopping onions. Period. We are a single-minded, 100 percent focused, dedicated, calm, and methodical onion chopper. No more, no less.',
   },
   {
-    id: 'touch',
-    emoji: '🤲',
-    title: 'Touch',
-    text: 'How does it feel in my hands?',
+    label: 'Stage 2 — Curiosity Glasses',
+    text:
+      'Get out the onions, clean off a good-size cutting board, pull out your best kitchen knife. Lay them all out and just look at everything. Pick each item up and feel it. These onions, this board, and this knife are your whole world for the next ten to fifteen minutes.',
   },
   {
-    id: 'sound',
-    emoji: '👂',
-    title: 'Sound',
-    text: 'What do I hear when I pay attention?',
+    label: 'Stage 3 — Wonder Glasses',
+    text:
+      'Spend a moment appreciating what brought each object to this moment. Those onions were grown by farmers, harvested, transported, picked out and brought by you to this cutting board. The knife — begun as ore deep in the earth, mined, smelted, cast, forged, and ground — has travelled far to feel so good in your hand right now.',
   },
   {
-    id: 'smell',
-    emoji: '👃',
-    title: 'Smell',
-    text: 'What scents am I usually ignoring?',
+    label: 'Stage 4 — Simple Flow',
+    text:
+      'You begin cutting. After the fifteenth slice, you start to feel a rhythm. You lean in, tilting your ear to the board to hear the sound as the blade crunches through the onion. Seventeen minutes have gone by — but it seemed like an hour. Or was it just thirty seconds? Nothing much has happened. And yet… you feel rather wonderful.',
   },
-] as const;
+];
 
-const wonderQuestionPlaceholders = [
-  'Where did this object come from before it reached me?',
-  'What makes this texture feel the way it does?',
-  'How does the rhythm change as I keep going?',
+const scenarioOptions = [
+  { id: 'coffee', label: 'Making coffee' },
+  { id: 'dishes', label: 'Washing dishes' },
+  { id: 'commute', label: 'Commuting' },
+  { id: 'grocery', label: 'Grocery shopping' },
+  { id: 'other', label: 'Something else' },
 ];
 
 /* ── Component ── */
@@ -142,23 +131,17 @@ export default function Module4() {
   const [flowMCQSubmitted, setFlowMCQSubmitted] = useState(false);
   const [showFlowNote, setShowFlowNote] = useState(false);
 
-  // Section 5
-  const [choreTask, setChoreTask] = useState<string | null>(null);
+  // Section 4 — Bill's worked example (stages revealed one at a time)
+  const [billStage, setBillStage] = useState(1);
 
-  // Section 6
-  const [experimentTask, setExperimentTask] = useState('');
-  const [isTaskConfirmed, setIsTaskConfirmed] = useState(false);
-  const [isCommitConfirmed, setIsCommitConfirmed] = useState(false);
-  const [selectedCuriositySenses, setSelectedCuriositySenses] = useState<
-    Array<(typeof curiositySenseOptions)[number]['id']>
-  >([]);
-  const [isSenseConfirmed, setIsSenseConfirmed] = useState(false);
-  const [isWonderQuestionConfirmed, setIsWonderQuestionConfirmed] = useState(false);
-  const [wonderPlaceholderIndex, setWonderPlaceholderIndex] = useState(0);
+  // Section 5 — Your experiment (scenario picker + 4 steps)
+  const [newScenarioId, setNewScenarioId] = useState<string | null>(null);
+  const [newScenarioCustom, setNewScenarioCustom] = useState('');
+  const [newCuriosity, setNewCuriosity] = useState('');
+  const [newWonder, setNewWonder] = useState('');
+  const [newFlow, setNewFlow] = useState('');
 
-  const [wonderQuestion, setWonderQuestion] = useState('');
-
-  // Section 7
+  // Section 6 — Summary
   const [experimentReady, setExperimentReady] = useState(false);
 
   const [saving, setSaving] = useState(false);
@@ -169,26 +152,39 @@ export default function Module4() {
   const hasCompletedScenarioCards = hasViewedChecklistGarden && hasViewedCuriosityGarden;
   const hasCompletedScenarioSection = hasCompletedScenarioCards && !!soundFamiliarSelection;
 
-  const selectedSenseMeta = curiositySenseOptions.filter(s => selectedCuriositySenses.includes(s.id));
-
-  useEffect(() => {
-    if (!choreTask || experimentTask.trim()) return;
-    const option = choreOptions.find(o => o.id === choreTask);
-    if (option) setExperimentTask(option.label);
-  }, [choreTask, experimentTask]);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setWonderPlaceholderIndex(prev => (prev + 1) % wonderQuestionPlaceholders.length);
-    }, 3000);
-    return () => window.clearInterval(timer);
-  }, []);
-
   const goNext = () => {
     if (currentSection < sections.length - 1) {
       setCurrentSection(s => s + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  // ─── Section 7 derived values ────────────────────────────────────────────
+  const newScenarioText =
+    newScenarioId === 'other'
+      ? newScenarioCustom.trim()
+      : scenarioOptions.find(o => o.id === newScenarioId)?.label ?? '';
+  const acceptanceText = newScenarioText
+    ? `I am doing ${newScenarioText.toLowerCase()}. Period. No multitasking, no podcast, no phone.`
+    : '';
+  const firstEmptyExperimentStep = !newCuriosity.trim()
+    ? 2
+    : !newWonder.trim()
+      ? 3
+      : !newFlow.trim()
+        ? 4
+        : null;
+  const canSubmitExperiment =
+    !!acceptanceText && !!newCuriosity.trim() && !!newWonder.trim() && !!newFlow.trim();
+
+  const saveNewExperiment = () => {
+    if (!canSubmitExperiment) return;
+    localStorage.setItem('m4_task', newScenarioText);
+    localStorage.setItem('m4_acceptance', acceptanceText);
+    localStorage.setItem('m4_sense', newCuriosity.trim());
+    localStorage.setItem('m4_wonder', newWonder.trim());
+    localStorage.setItem('m4_flow', newFlow.trim());
+    goNext();
   };
 
   const saveAndFinish = async () => {
@@ -198,24 +194,18 @@ export default function Module4() {
       parts.push(
         `Perception mode: ${perceptionMode === 'fresh' ? 'Tends toward fresh eyes' : 'Tends to see through labels'}`,
       );
-    if (choreTask)
-      parts.push(
-        `Wonder practice chore: ${choreOptions.find(o => o.id === choreTask)?.label ?? choreTask}`,
-      );
-    if (wonderQuestion) parts.push(`Wonder experiment question: ${wonderQuestion}`);
+    if (newScenarioText) parts.push(`Experiment task: ${newScenarioText}`);
+    if (acceptanceText) parts.push(`Acceptance: ${acceptanceText}`);
+    if (newCuriosity.trim()) parts.push(`Curiosity glasses: ${newCuriosity.trim()}`);
+    if (newWonder.trim()) parts.push(`Wonder glasses: ${newWonder.trim()}`);
+    if (newFlow.trim()) parts.push(`Simple flow: ${newFlow.trim()}`);
 
-    // Save experiment inputs and unlock journal entry
-    localStorage.setItem('m4_task', experimentTask);
-    localStorage.setItem('m4_sense', selectedCuriositySenses.join(', '));
-    localStorage.setItem('m4_wonder', wonderQuestion);
     localStorage.setItem('journal_m4_status', 'available');
 
     await addEntry({
       moduleId: 'branching',
       moduleTitle: 'From Wonder to Flow',
-      selectedSignals: choreTask
-        ? [choreOptions.find(o => o.id === choreTask)?.label ?? '']
-        : [],
+      selectedSignals: newScenarioText ? [newScenarioText] : [],
       reflectionText: parts.join('\n') || undefined,
     });
 
@@ -665,7 +655,7 @@ export default function Module4() {
         </motion.div>
       )}
 
-      {/* ─── SECTION 4 — The Onion Story ─── */}
+      {/* ─── SECTION 4 — Bill's Meaning Experiment (Worked Example) ─── */}
       {currentSection === 4 && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -674,100 +664,65 @@ export default function Module4() {
           className="space-y-8"
         >
           <div>
-            <h2 className="font-serif text-2xl text-ink mb-3">The onion story</h2>
+            <h2 className="font-serif text-2xl text-ink mb-3">Bill's meaning experiment</h2>
             <p className="text-sm text-muted leading-relaxed max-w-2xl">
-              Wonder doesn't require special circumstances. Sometimes it starts with an onion.
+              See how the full pipeline works in practice.
             </p>
           </div>
 
-          {/* Story card */}
-          <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-7 space-y-4">
-            <p className="text-sm text-ink leading-relaxed">
-              Fritz is making dinner. He's done this hundreds of times. He reaches for an onion.
-            </p>
-            <p className="text-sm text-ink leading-relaxed">
-              But tonight, something shifts. He notices the outermost layer — dry, papery, faintly
-              translucent. He peels it back. Underneath: a different texture entirely, smooth,
-              slightly moist, the color almost luminescent under the kitchen light.
-            </p>
-            <p className="text-sm text-ink leading-relaxed">
-              He brings it closer. The smell — not just "onion smell," but something sharper, earthy,
-              almost alive. He watches the layers come apart. Each one slightly different. The
-              architecture of it. How did something so ordinary become so... <em>interesting</em>?
-            </p>
-            <div className="pt-3 border-t border-black/5">
-              <p className="text-xs text-muted italic">
-                The onion didn't change. Only Fritz's mode of attention did.
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-[#6B8F6E]/30 bg-[#E3E8E4]/30 p-5">
-            <p className="text-xs font-semibold text-[#6B8F6E] uppercase tracking-widest mb-2">
-              The Key Insight
-            </p>
-            <p className="text-sm text-ink leading-relaxed">
-              Wonder is not about finding extraordinary things. It's about bringing a different
-              quality of attention to ordinary ones. The practice is the same whether you're peeling
-              an onion or walking to work.
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-ink font-medium mb-1">
-              Pick one routine activity to bring wonder to this week.
-            </p>
-            <p className="text-xs text-muted mb-4">
-              Something you do on autopilot — the more "boring," the better.
-            </p>
-            <div className="grid grid-cols-2 gap-2.5">
-              {choreOptions.map(opt => (
-                <button
-                  key={opt.id}
-                  onClick={() => setChoreTask(opt.id)}
-                  className={`text-left px-5 py-3.5 rounded-xl border text-sm transition-all ${
-                    choreTask === opt.id
-                      ? 'border-ink bg-ink/[0.04] text-ink font-medium'
-                      : 'border-black/10 bg-white text-ink/70 hover:border-ink/30 hover:text-ink'
+          <div className="space-y-4">
+            {billStages.slice(0, billStage).map((stage, i) => {
+              const isLatest = i === billStage - 1;
+              return (
+                <motion.div
+                  key={stage.label}
+                  initial={isLatest ? { opacity: 0, y: 8 } : false}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                  className={`rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6 transition-opacity ${
+                    isLatest ? 'opacity-100' : 'opacity-60'
                   }`}
                 >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+                  <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-3">
+                    {stage.label}
+                  </p>
+                  <p className="text-sm text-ink leading-relaxed">{stage.text}</p>
+                </motion.div>
+              );
+            })}
           </div>
 
-          {choreTask && (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-ink/20 bg-ink/[0.02] p-5"
-            >
-              <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-2">
-                Your Commitment
-              </p>
-              <p className="text-sm text-ink italic leading-relaxed">
-                "I will bring fresh eyes to{' '}
-                <strong className="not-italic">
-                  {choreOptions.find(o => o.id === choreTask)?.label.toLowerCase()}
-                </strong>{' '}
-                — noticing before naming, staying with the detail."
-              </p>
-            </motion.div>
-          )}
-
-          {choreTask && (
+          {billStage < billStages.length ? (
             <button
-              onClick={goNext}
-              className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
+              onClick={() => setBillStage(s => s + 1)}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl border border-ink/20 bg-white text-ink text-sm font-medium transition-all hover:border-ink/40"
             >
-              Continue <ArrowRight className="w-4 h-4" />
+              Next <ArrowRight className="w-4 h-4" />
             </button>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
+              <div className="rounded-2xl border border-[#6B8F6E]/30 bg-[#E3E8E4]/30 p-5">
+                <p className="text-sm text-ink leading-relaxed">
+                  Now it's your turn. This is your version 1 prototype — low stakes, short
+                  duration.
+                </p>
+              </div>
+              <button
+                onClick={goNext}
+                className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
+              >
+                Start my experiment <ArrowRight className="w-4 h-4" />
+              </button>
+            </motion.div>
           )}
         </motion.div>
       )}
 
-      {/* ─── SECTION 5 — Design Experiment ─── */}
+      {/* ─── SECTION 5 — Your Experiment (Scenario + 4 Steps) ─── */}
       {currentSection === 5 && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -775,251 +730,132 @@ export default function Module4() {
           transition={{ duration: 0.5, ease: 'easeOut' }}
           className="space-y-8"
         >
+          {/* Scenario picker */}
           <div>
-            <h2 className="font-serif text-2xl text-ink mb-3">Design your experiment</h2>
-            <p className="text-sm text-muted leading-relaxed max-w-2xl">
-              Build one tiny experiment you can actually do today. Keep it simple and specific.
+            <h2 className="font-serif text-2xl text-ink mb-3">
+              First, pick a task for your experiment.
+            </h2>
+            <p className="text-sm text-muted leading-relaxed max-w-2xl mb-5">
+              Something routine, 5–15 minutes, that usually feels like just a chore.
             </p>
+
+            <div className="flex flex-wrap gap-2.5">
+              {scenarioOptions.map(opt => {
+                const isSelected = newScenarioId === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => setNewScenarioId(opt.id)}
+                    className={`px-4 py-2 rounded-full border text-sm transition-all ${
+                      isSelected
+                        ? 'border-ink bg-ink/[0.04] text-ink font-medium'
+                        : 'border-black/15 bg-white text-ink/70 hover:border-ink/30 hover:text-ink'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {newScenarioId === 'other' && (
+              <input
+                value={newScenarioCustom}
+                onChange={e => setNewScenarioCustom(e.target.value)}
+                placeholder="e.g. watering the plants, tidying the desk"
+                className="mt-3 w-full rounded-xl border border-black/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink/40 transition-all"
+              />
+            )}
           </div>
 
-          {!isTaskConfirmed ? (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6"
-            >
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 1</p>
-              <h3 className="text-xl font-serif text-ink mb-2">Pick a simple, routine task.</h3>
-              <p className="text-sm text-muted leading-relaxed mb-4">
-                Something you do regularly that usually feels like "just a chore." 5-15 minutes.
-              </p>
-              <input
-                value={experimentTask}
-                onChange={e => setExperimentTask(e.target.value)}
-                placeholder="e.g. doing the dishes, folding laundry, making coffee"
-                className="w-full rounded-xl border border-black/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink/40 transition-all"
-              />
-              <button
-                onClick={() => {
-                  setIsTaskConfirmed(true);
-                  setChoreTask('other');
-                }}
-                disabled={!experimentTask.trim()}
-                className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                This is my task →
-              </button>
-            </motion.div>
-          ) : (
-            <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6 opacity-75">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 1</p>
-                  <h3 className="text-xl font-serif text-ink">Pick a simple, routine task.</h3>
-                  <p className="mt-2 text-sm text-ink/80">{experimentTask}</p>
+          {acceptanceText && (
+            <>
+              {/* Step 1 — pre-filled Acceptance (example, warm tint) */}
+              <div className="rounded-2xl border border-[#D9C9A8]/50 bg-[#FAF2E3] shadow-sm p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted">
+                    Step 1 — Acceptance
+                  </p>
+                  <span className="text-[10px] uppercase tracking-widest text-[#8B6A2F] bg-white/60 border border-[#D9C9A8]/60 rounded-full px-2 py-0.5">
+                    Example
+                  </span>
                 </div>
-                <button
-                  onClick={() => {
-                    setIsTaskConfirmed(false);
-                    setIsCommitConfirmed(false);
-                    setIsSenseConfirmed(false);
-                    setIsWonderQuestionConfirmed(false);
-                  }}
-                  className="inline-flex items-center gap-1 rounded-lg border border-black/15 bg-white px-3 py-1.5 text-xs text-ink/80 hover:bg-black/[0.03]"
-                >
-                  <Pencil className="w-3.5 h-3.5" /> Edit
-                </button>
-              </div>
-            </div>
-          )}
-
-          {isTaskConfirmed && (
-            isCommitConfirmed ? (
-              <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6 opacity-75">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 2</p>
-                    <h3 className="text-xl font-serif text-ink mb-3">Make your commitment.</h3>
-                    <blockquote className="rounded-2xl border border-[#D9C9A8]/40 bg-[#FAF2E3] px-6 py-5 text-center text-lg leading-relaxed text-ink font-serif">
-                      "I am doing {experimentTask}. Period. No multitasking, no podcast, no phone."
-                    </blockquote>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setIsCommitConfirmed(false);
-                      setIsSenseConfirmed(false);
-                      setIsWonderQuestionConfirmed(false);
-                    }}
-                    className="inline-flex items-center gap-1 rounded-lg border border-black/15 bg-white px-3 py-1.5 text-xs text-ink/80 hover:bg-black/[0.03]"
-                  >
-                    <Pencil className="w-3.5 h-3.5" /> Edit
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6"
-              >
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 2</p>
-                <h3 className="text-xl font-serif text-ink mb-3">Make your commitment.</h3>
-                <blockquote className="rounded-2xl border border-[#D9C9A8]/40 bg-[#FAF2E3] px-6 py-5 text-center text-lg leading-relaxed text-ink font-serif">
-                  "I am doing {experimentTask}. Period. No multitasking, no podcast, no phone."
+                <p className="text-xs text-muted leading-relaxed mb-3">
+                  Fully commit to being here, doing just this.
+                </p>
+                <blockquote className="text-base text-ink font-serif leading-relaxed">
+                  "{acceptanceText}"
                 </blockquote>
-                <button
-                  onClick={() => setIsCommitConfirmed(true)}
-                  className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
-                >
-                  I commit →
-                </button>
-              </motion.div>
-            )
-          )}
-
-          {isTaskConfirmed && isCommitConfirmed && (
-            isSenseConfirmed ? (
-              <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6 opacity-75">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 3</p>
-                    <h3 className="text-xl font-serif text-ink mb-2">Pick your curiosity entry point.</h3>
-                    <p className="text-sm text-muted mb-3">What sense will you lead with?</p>
-                    <p className="text-sm text-ink/80">
-                      {selectedSenseMeta.map(s => `${s.emoji} ${s.title}`).join(' · ')}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setIsSenseConfirmed(false);
-                      setIsWonderQuestionConfirmed(false);
-                    }}
-                    className="inline-flex items-center gap-1 rounded-lg border border-black/15 bg-white px-3 py-1.5 text-xs text-ink/80 hover:bg-black/[0.03]"
-                  >
-                    <Pencil className="w-3.5 h-3.5" /> Edit
-                  </button>
-                </div>
               </div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6"
-              >
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 3</p>
-                <h3 className="text-xl font-serif text-ink mb-2">Pick your curiosity entry point.</h3>
-                <p className="text-sm text-muted mb-4">What sense will you lead with?</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {curiositySenseOptions.map(option => {
-                    const isSelected = selectedCuriositySenses.includes(option.id);
-                    return (
-                      <button
-                        key={option.id}
-                        onClick={() => {
-                          setSelectedCuriositySenses(prev =>
-                            prev.includes(option.id)
-                              ? prev.filter(id => id !== option.id)
-                              : [...prev, option.id],
-                          );
-                        }}
-                        className={`rounded-2xl border p-4 text-left transition-all ${
-                          isSelected
-                            ? 'border-ink bg-ink/[0.04] text-ink'
-                            : selectedCuriositySenses.length > 0
-                              ? 'border-black/10 bg-white text-ink/45'
-                              : 'border-black/10 bg-white text-ink/80 hover:border-ink/30'
-                        }`}
-                      >
-                        <p className="text-lg mb-1">
-                          {option.emoji} <span className="font-semibold text-base">{option.title}</span>
-                        </p>
-                        <p className="text-sm leading-relaxed">{option.text}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-                {selectedCuriositySenses.length > 0 && (
-                  <button
-                    onClick={() => setIsSenseConfirmed(true)}
-                    className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
-                  >
-                    Got it →
-                  </button>
-                )}
-              </motion.div>
-            )
-          )}
 
-          {isTaskConfirmed && isCommitConfirmed && isSenseConfirmed && (
-            isWonderQuestionConfirmed ? (
-              <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6 opacity-75">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 4</p>
-                    <h3 className="text-xl font-serif text-ink mb-2">What might you wonder about?</h3>
-                    <p className="text-sm text-muted mb-3">
-                      One question that goes beyond "how do I get this done?"
-                    </p>
-                    <p className="text-sm text-ink/80">{wonderQuestion}</p>
-                  </div>
-                  <button
-                    onClick={() => setIsWonderQuestionConfirmed(false)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-black/15 bg-white px-3 py-1.5 text-xs text-ink/80 hover:bg-black/[0.03]"
-                  >
-                    <Pencil className="w-3.5 h-3.5" /> Edit
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6"
+              {/* Step 2 — Curiosity Glasses */}
+              <div
+                className={`rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6 border-l-4 transition-all ${
+                  firstEmptyExperimentStep === 2 ? 'border-l-ink' : 'border-l-transparent'
+                } ${newCuriosity.trim() ? 'opacity-70' : 'opacity-100'}`}
               >
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">Step 4</p>
-                <h3 className="text-xl font-serif text-ink mb-2">What might you wonder about?</h3>
-                <p className="text-sm text-muted mb-4">
-                  One question that goes beyond "how do I get this done?"
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">
+                  Step 2 — Curiosity Glasses
+                </p>
+                <p className="text-xs text-muted leading-relaxed mb-3">
+                  Pick one sense to lead with. What will you notice?
                 </p>
                 <input
-                  value={wonderQuestion}
-                  onChange={e => setWonderQuestion(e.target.value)}
-                  placeholder={wonderQuestionPlaceholders[wonderPlaceholderIndex]}
-                  className="w-full rounded-xl border border-black/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink/40 transition-all"
+                  value={newCuriosity}
+                  onChange={e => setNewCuriosity(e.target.value)}
+                  placeholder="e.g. I'll focus on the sound of the water boiling and the smell as it brews."
+                  className="w-full rounded-xl border border-black/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink/40 transition-all"
                 />
-                <button
-                  onClick={() => setIsWonderQuestionConfirmed(true)}
-                  disabled={!wonderQuestion.trim()}
-                  className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  This is my question →
-                </button>
-              </motion.div>
-            )
-          )}
-
-          {isWonderQuestionConfirmed && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6">
-                <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-4">Your experiment</p>
-                <div className="space-y-2.5 text-sm text-ink/90 leading-relaxed">
-                  <p>🗂 Task: {experimentTask}</p>
-                  <p>💬 Commitment: "I am doing {experimentTask}. Period."</p>
-                  <p>
-                    Curiosity entry:{' '}
-                    {selectedSenseMeta.map(s => `${s.emoji} ${s.title}`).join(' · ')}
-                  </p>
-                  <p>❓ Wonder question: {wonderQuestion}</p>
-                </div>
               </div>
-              <p className="text-xs text-muted">Go try it. Come back when you're done.</p>
-              <button
-                onClick={goNext}
-                className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"
+
+              {/* Step 3 — Wonder Glasses */}
+              <div
+                className={`rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6 border-l-4 transition-all ${
+                  firstEmptyExperimentStep === 3 ? 'border-l-ink' : 'border-l-transparent'
+                } ${newWonder.trim() ? 'opacity-70' : 'opacity-100'}`}
               >
-                Done →
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">
+                  Step 3 — Wonder Glasses
+                </p>
+                <p className="text-xs text-muted leading-relaxed mb-3">
+                  Ask one question that goes beyond getting it done.
+                </p>
+                <input
+                  value={newWonder}
+                  onChange={e => setNewWonder(e.target.value)}
+                  placeholder="e.g. Where did these beans come from before they reached me?"
+                  className="w-full rounded-xl border border-black/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink/40 transition-all"
+                />
+              </div>
+
+              {/* Step 4 — Simple Flow */}
+              <div
+                className={`rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6 border-l-4 transition-all ${
+                  firstEmptyExperimentStep === 4 ? 'border-l-ink' : 'border-l-transparent'
+                } ${newFlow.trim() ? 'opacity-70' : 'opacity-100'}`}
+              >
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-2">
+                  Step 4 — Simple Flow
+                </p>
+                <p className="text-xs text-muted leading-relaxed mb-3">
+                  What will staying in sensory contact look like for you?
+                </p>
+                <input
+                  value={newFlow}
+                  onChange={e => setNewFlow(e.target.value)}
+                  placeholder="e.g. I'll keep my attention on the sound and smell until the cup is ready — nothing else."
+                  className="w-full rounded-xl border border-black/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink/40 transition-all"
+                />
+              </div>
+
+              <button
+                onClick={saveNewExperiment}
+                disabled={!canSubmitExperiment}
+                className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                This is my experiment <ArrowRight className="w-4 h-4" />
               </button>
-            </motion.div>
+            </>
           )}
         </motion.div>
       )}
@@ -1088,28 +924,50 @@ export default function Module4() {
           </div>
 
           {/* Your experiment recap */}
-          {(choreTask || wonderQuestion) && (
+          {(newScenarioText || newWonder.trim()) && (
             <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6">
               <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-4">
                 Your wonder experiment
               </p>
               <div className="space-y-3">
-                {choreTask && (
+                {newScenarioText && (
                   <div>
                     <p className="text-[10px] text-muted uppercase tracking-widest mb-1">
                       Practice ground
                     </p>
-                    <p className="text-sm text-ink">
-                      {choreOptions.find(o => o.id === choreTask)?.label}
-                    </p>
+                    <p className="text-sm text-ink">{newScenarioText}</p>
                   </div>
                 )}
-                {wonderQuestion && (
+                {acceptanceText && (
                   <div>
                     <p className="text-[10px] text-muted uppercase tracking-widest mb-1">
-                      Wonder question
+                      Acceptance
                     </p>
-                    <p className="text-sm text-ink italic">"{wonderQuestion.trim()}"</p>
+                    <p className="text-sm text-ink italic">"{acceptanceText}"</p>
+                  </div>
+                )}
+                {newCuriosity.trim() && (
+                  <div>
+                    <p className="text-[10px] text-muted uppercase tracking-widest mb-1">
+                      Curiosity glasses
+                    </p>
+                    <p className="text-sm text-ink">{newCuriosity.trim()}</p>
+                  </div>
+                )}
+                {newWonder.trim() && (
+                  <div>
+                    <p className="text-[10px] text-muted uppercase tracking-widest mb-1">
+                      Wonder glasses
+                    </p>
+                    <p className="text-sm text-ink italic">"{newWonder.trim()}"</p>
+                  </div>
+                )}
+                {newFlow.trim() && (
+                  <div>
+                    <p className="text-[10px] text-muted uppercase tracking-widest mb-1">
+                      Simple flow
+                    </p>
+                    <p className="text-sm text-ink">{newFlow.trim()}</p>
                   </div>
                 )}
               </div>
@@ -1132,7 +990,7 @@ export default function Module4() {
               <div className="rounded-2xl border border-[#6B8F6E]/30 bg-[#E3E8E4]/30 p-4">
                 <p className="text-sm text-ink leading-relaxed">
                   <strong>Good.</strong> The experiment is simple: bring your wonder question with
-                  you into {choreOptions.find(o => o.id === choreTask)?.label.toLowerCase() ?? 'your chosen activity'}.
+                  you into {newScenarioText ? newScenarioText.toLowerCase() : 'your chosen activity'}.
                   Notice before naming. Follow what interests you. See what happens.
                 </p>
               </div>
