@@ -37,7 +37,7 @@ const glassCards: GlassCard[] = [
     question: '"What do I need to do here?"',
     description:
       "You see tasks, to-dos, problems to solve. You're in the transactional world, oriented toward the future.",
-    image: '/normal glass.png',
+    image: '/M4-3.1.png',
   },
   {
     id: 'curiosity',
@@ -46,7 +46,7 @@ const glassCards: GlassCard[] = [
     question: '"Hmmm — what more is there to see?"',
     description:
       "You start noticing things as they actually are. Details. Patterns. Small surprises. You're shifting toward the flow world.",
-    image: '/curiosity glass.png',
+    image: '/M4-3.2.png',
   },
   {
     id: 'wonder',
@@ -55,7 +55,7 @@ const glassCards: GlassCard[] = [
     question: '"There\'s something wonderful here — what is it?"',
     description:
       "If you push curiosity far enough, something will shift. You encounter mystery. Mystery is a sense that you're touching something much larger than you can fully grasp. That's wonder.",
-    image: '/wonder glass.png',
+    image: '/M4-3.3.png',
   },
 ];
 
@@ -303,14 +303,11 @@ export default function ThreeGlassesModulePage({ onContinue }: ThreeGlassesModul
                                 </div>
                               </div>
                               <div className="px-5">
-                                <div
-                                  className="mx-auto w-full max-w-[312px] overflow-hidden rounded-xl border border-black/10"
-                                  style={{ aspectRatio: '1 / 1' }}
-                                >
+                                <div className="mx-auto w-full overflow-hidden rounded-xl border border-black/10">
                                   <img
                                     src={card.image}
                                     alt={card.label}
-                                    className="h-full w-full object-cover object-center"
+                                    className="w-full h-auto object-contain"
                                   />
                                 </div>
                               </div>

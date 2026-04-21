@@ -344,7 +344,6 @@ export default function Module4() {
                       alt="Checklist garden"
                       className="absolute inset-0 w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/20" />
                     <button
                       onClick={() => setShowChecklistGarden(false)}
                       className="absolute bottom-4 left-4 px-3 py-1.5 rounded-lg border border-black/15 bg-white/90 text-[11px] font-medium text-ink hover:bg-white"
@@ -388,7 +387,6 @@ export default function Module4() {
                       alt="Curiosity garden"
                       className="absolute inset-0 w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/20" />
                     <button
                       onClick={() => setShowCuriosityGarden(false)}
                       className="absolute bottom-4 left-4 px-3 py-1.5 rounded-lg border border-black/15 bg-white/90 text-[11px] font-medium text-ink hover:bg-white"
