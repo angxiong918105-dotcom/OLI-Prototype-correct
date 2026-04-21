@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useJournal } from '../context/JournalContext';
 import { motion } from 'motion/react';
@@ -68,8 +68,8 @@ const flowMCQOptions = [
 ];
 
 const pipelineSteps = [
-  { label: 'Wonder Seed', sub: 'A question or intention' },
-  { label: 'Noticing', sub: 'Fresh-eyes attention' },
+  { label: 'Normal Glasses', sub: 'Transactional default' },
+  { label: 'Acceptance', sub: 'I am doing this. Period.' },
   { label: 'Curiosity', sub: 'Following what interests you' },
   { label: 'Simple Flow', sub: 'Absorbed, present' },
   { label: 'Meaning Moment', sub: 'Intrinsic, alive' },
@@ -78,21 +78,25 @@ const pipelineSteps = [
 const billStages = [
   {
     label: 'Stage 1 — Acceptance',
+    image: '/Panel 1.png',
     text:
       '"To transform this mundane chore into a simple flow experience, we must first choose to accept that what we\'re doing now is chopping onions. Period. We are a single-minded, 100 percent focused, dedicated, calm, and methodical onion chopper. No more, no less."',
   },
   {
     label: 'Stage 2 — Curiosity Glasses',
+    image: '/Panel 2.png',
     text:
       '"Get out the onions, clean off a good-size cutting board, pull out your best kitchen knife. Lay them all out and just look at everything. Pick each item up and feel it. These onions, this board, and this knife are your whole world for the next ten to fifteen minutes."',
   },
   {
     label: 'Stage 3 — Wonder Glasses',
+    image: '/panel 3.png',
     text:
       '"Spend a moment appreciating what brought each object to this moment. Those onions were grown by farmers, harvested, transported, picked out and brought by you to this cutting board. The knife — begun as ore deep in the earth, mined, smelted, cast, forged, and ground — has travelled far to feel so good in your hand right now."',
   },
   {
     label: 'Stage 4 — Simple Flow',
+    image: '/Panel 4.png',
     text:
       '"You begin cutting. After the fifteenth slice, you start to feel a rhythm. You lean in, tilting your ear to the board to hear the sound as the blade crunches through the onion. Seventeen minutes have gone by — but it seemed like an hour. Or was it just thirty seconds? Nothing much has happened. And yet… you feel rather wonderful."',
   },
@@ -152,9 +156,6 @@ export default function Module4() {
   const [newCuriosity, setNewCuriosity] = useState('');
   const [newWonder, setNewWonder] = useState('');
   const [newFlow, setNewFlow] = useState('');
-
-  // Section 6 — Summary
-  const [experimentReady, setExperimentReady] = useState(false);
 
   const [saving, setSaving] = useState(false);
 
@@ -738,7 +739,7 @@ export default function Module4() {
           className="space-y-8"
         >
           <div>
-            <h2 className="font-serif text-2xl text-ink mb-3">Bill's meaning experiment</h2>
+            <h2 className="font-serif text-2xl text-ink mb-3">How Bill designs a meaning experiment</h2>
             <p className="text-sm text-muted leading-relaxed max-w-2xl">
               Let's look at a real scenario from the author of this book. See how Bill turns
               something ordinary, chopping onions, into a meaningful experience, and how he
@@ -746,36 +747,49 @@ export default function Module4() {
             </p>
           </div>
 
-          <div className="space-y-4">
-            {billStages.slice(0, billStage).map((stage, i) => {
-              const isLatest = i === billStage - 1;
-              return (
-                <motion.div
+          <div className="relative rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6">
+            <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-4">
+              {billStages[billStage - 1].label}
+            </p>
+
+            <div className="relative mx-auto max-w-md">
+              {billStages.map((stage, idx) => (
+                <img
                   key={stage.label}
-                  initial={isLatest ? { opacity: 0, y: 8 } : false}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, ease: 'easeOut' }}
-                  className={`rounded-2xl border border-black/[0.08] bg-white shadow-sm p-6 transition-opacity ${
-                    isLatest ? 'opacity-100' : 'opacity-60'
+                  src={stage.image}
+                  alt={stage.label}
+                  className={`block w-full h-auto transition-opacity duration-300 ${
+                    idx === billStage - 1 ? 'relative opacity-100' : 'absolute inset-0 opacity-0 pointer-events-none'
                   }`}
-                >
-                  <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-3">
-                    {stage.label}
-                  </p>
-                  <p className="text-sm text-ink leading-relaxed">{stage.text}</p>
-                </motion.div>
-              );
-            })}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setBillStage(s => Math.max(1, s - 1))}
+              disabled={billStage === 1}
+              aria-label="Previous panel"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full border border-black/15 bg-white text-ink flex items-center justify-center shadow-sm transition-all hover:bg-black/[0.03] disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setBillStage(s => Math.min(billStages.length, s + 1))}
+              disabled={billStage === billStages.length}
+              aria-label="Next panel"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full border border-black/15 bg-white text-ink flex items-center justify-center shadow-sm transition-all hover:bg-black/[0.03] disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
+            <div className="mt-4 text-center text-[11px] font-medium text-muted">
+              {billStage} / {billStages.length}
+            </div>
           </div>
 
-          {billStage < billStages.length ? (
-            <button
-              onClick={() => setBillStage(s => s + 1)}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl border border-ink/20 bg-white text-ink text-sm font-medium transition-all hover:border-ink/40"
-            >
-              Next <ArrowRight className="w-4 h-4" />
-            </button>
-          ) : (
+          {billStage === billStages.length && (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -923,7 +937,7 @@ export default function Module4() {
                 disabled={!canSubmitExperiment}
                 className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                This is my experiment <ArrowRight className="w-4 h-4" />
+                Confirm my experiment <ArrowRight className="w-4 h-4" />
               </button>
             </>
           )}
@@ -975,15 +989,15 @@ export default function Module4() {
           {/* Key takeaways */}
           <div className="space-y-3">
             <p className="text-xs font-semibold text-muted uppercase tracking-widest">
-              What you built today
+              What else you've learned
             </p>
             <div className="space-y-2.5">
               {[
-                { icon: '◎', text: 'You can identify the difference between label-seeing and fresh-eyes perception' },
-                { icon: '◎', text: 'Wonder = Noticing × Curiosity — both are practices, not gifts' },
-                { icon: '◎', text: 'Simple flow is accessible through ordinary tasks with full attention' },
-                { icon: '◎', text: 'You have one concrete chore to bring wonder to this week' },
-                { icon: '◎', text: 'You wrote a wonder question to carry into your next experiment' },
+                { icon: '◎', text: 'Designing wonder and entering flow is how you design meaning in ordinary time.' },
+                { icon: '◎', text: "Your brain's default mode is transactional — it keeps you in the future, managing tasks." },
+                { icon: '◎', text: 'Wonder is designed: Curiosity + Mystery = Wonder.' },
+                { icon: '◎', text: 'Wonder opens the door to the flow world. But to stay, you need Acceptance + Availability.' },
+                { icon: '◎', text: "Simple Flow doesn't require peak conditions. It's available in any ordinary task." },
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <CheckCircle2 className="w-4 h-4 text-[#6B8F6E] mt-0.5 flex-shrink-0" />
@@ -1044,44 +1058,22 @@ export default function Module4() {
             </div>
           )}
 
-          {!experimentReady ? (
-            <button
-              onClick={() => setExperimentReady(true)}
-              className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl border border-ink/20 bg-white text-ink text-sm font-medium transition-all hover:border-ink/40"
-            >
-              I'm ready to try this <CheckCircle2 className="w-4 h-4" />
-            </button>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-4"
-            >
-              <div className="rounded-2xl border border-[#6B8F6E]/30 bg-[#E3E8E4]/30 p-4">
-                <p className="text-sm text-ink leading-relaxed">
-                  <strong>Good.</strong> The experiment is simple: bring your wonder question with
-                  you into {newScenarioText ? newScenarioText.toLowerCase() : 'your chosen activity'}.
-                  Notice before naming. Follow what interests you. See what happens.
-                </p>
-              </div>
-              <button
-                onClick={saveAndFinish}
-                disabled={saving}
-                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85 disabled:opacity-50"
-              >
-                {saving ? (
-                  <span className="flex items-center gap-2">
-                    <span className="w-3.5 h-3.5 border-2 border-paper/30 border-t-paper rounded-full animate-spin" />
-                    Saving...
-                  </span>
-                ) : (
-                  <>
-                    Complete Module 4 <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </motion.div>
-          )}
+          <button
+            onClick={saveAndFinish}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85 disabled:opacity-50"
+          >
+            {saving ? (
+              <span className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 border-2 border-paper/30 border-t-paper rounded-full animate-spin" />
+                Saving...
+              </span>
+            ) : (
+              <>
+                Complete Module 4 <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
         </motion.div>
       )}
     </div>
