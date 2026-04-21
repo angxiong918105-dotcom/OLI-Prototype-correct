@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { ArrowRight, BookOpen, Sparkles } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useJournal } from '../context/JournalContext';
 import { modules } from '../data/modules';
 import OLMDashboard from '../components/OLMDashboard';
 import FeedbackBlock from '../components/FeedbackBlock';
+import OnboardingModal, { type OnboardingPath } from '../components/OnboardingModal';
+import { useOnboarding } from '../context/OnboardingContext';
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -17,16 +20,20 @@ function formatDate(iso: string) {
   });
 }
 
-function useCurrentFocus(entries: { moduleId: string }[]) {
+function useCurrentFocus(
+  entries: { moduleId: string }[],
+  pathModules: typeof modules,
+) {
   const completedIds = new Set(entries.map((e) => e.moduleId));
-  const nextModule = modules.find((m) => !completedIds.has(m.id));
-  const count = completedIds.size;
+  const nextModule = pathModules.find((m) => !completedIds.has(m.id));
+  const completedInPath = pathModules.filter((m) => completedIds.has(m.id)).length;
+  const total = pathModules.length;
   return {
-    module: nextModule ?? modules[modules.length - 1],
-    completed: count,
-    total: modules.length,
-    pct: Math.round((count / modules.length) * 100),
-    allDone: count >= modules.length,
+    module: nextModule ?? pathModules[pathModules.length - 1],
+    completed: completedInPath,
+    total,
+    pct: total === 0 ? 0 : Math.round((completedInPath / total) * 100),
+    allDone: completedInPath >= total,
   };
 }
 
@@ -46,8 +53,29 @@ function aiInsight(n: number): string {
 
 export default function Dashboard() {
   const { entries, latestEntry, hasEntries, loading, restart } = useJournal();
-  const focus = useCurrentFocus(entries);
+  const { path, activeModules } = useOnboarding();
+  const pathModules = path
+    ? modules.filter((m) => activeModules.has(m.number))
+    : modules;
+  const focus = useCurrentFocus(entries, pathModules);
   const insight = aiInsight(entries.length);
+  const navigate = useNavigate();
+
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [onboardingMode, setOnboardingMode] = useState<'start' | 'restart'>('start');
+
+  const openOnboarding = (mode: 'start' | 'restart') => {
+    setOnboardingMode(mode);
+    setOnboardingOpen(true);
+  };
+
+  const handleOnboardingFinish = async (_path: OnboardingPath) => {
+    setOnboardingOpen(false);
+    if (onboardingMode === 'restart') {
+      await restart();
+    }
+    navigate(modules[0].path);
+  };
 
   if (loading) {
     return (
@@ -96,16 +124,29 @@ export default function Dashboard() {
         {/* Primary CTA */}
         {!focus.allDone && (
           <div className="mt-6 pt-5 border-t border-black/[0.05] flex items-center justify-between">
-            <p className="text-xs text-muted italic">
-              {!hasEntries ? 'Start here' : 'Continue where you left off'}
-            </p>
-            <Link
-              to={focus.module.path}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-all hover:-translate-y-0.5 hover:shadow-md shrink-0"
-            >
-              {!hasEntries ? 'Start Module 1' : `Continue · Module ${focus.module.number}`}
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            {hasEntries ? (
+              <p className="text-xs text-muted italic">Continue where you left off</p>
+            ) : (
+              <span />
+            )}
+            {!hasEntries ? (
+              <button
+                type="button"
+                onClick={() => openOnboarding('start')}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-all hover:-translate-y-0.5 hover:shadow-md shrink-0"
+              >
+                Start Module 1
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <Link
+                to={focus.module.path}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink/90 transition-all hover:-translate-y-0.5 hover:shadow-md shrink-0"
+              >
+                {`Continue · Module ${focus.module.number}`}
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
           </div>
         )}
       </div>
@@ -125,10 +166,10 @@ export default function Dashboard() {
       {hasEntries && (
         <div className="mt-6 flex justify-end">
           <button
-            onClick={restart}
+            onClick={() => openOnboarding('restart')}
             className="text-xs text-muted hover:text-ink transition-colors underline underline-offset-2"
           >
-            Restart journey
+            Start over
           </button>
         </div>
       )}
@@ -207,6 +248,12 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      <OnboardingModal
+        open={onboardingOpen}
+        onClose={() => setOnboardingOpen(false)}
+        onFinish={handleOnboardingFinish}
+      />
     </div>
   );
 }

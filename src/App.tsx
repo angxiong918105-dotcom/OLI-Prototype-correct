@@ -16,11 +16,13 @@ import Reflection from './pages/Reflection';
 import Journal from './pages/Journal';
 import JournalM4 from './pages/JournalM4';
 import { JournalProvider } from './context/JournalContext';
+import { OnboardingProvider } from './context/OnboardingContext';
 
 export default function App() {
   return (
     <BrowserRouter>
       <JournalProvider>
+        <OnboardingProvider>
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
@@ -35,6 +37,7 @@ export default function App() {
             <Route path="journal/m4" element={<JournalM4 />} />
           </Route>
         </Routes>
+        </OnboardingProvider>
       </JournalProvider>
     </BrowserRouter>
   );

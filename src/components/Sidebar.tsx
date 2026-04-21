@@ -2,10 +2,12 @@ import { NavLink, useLocation, Link } from 'react-router-dom';
 import { LayoutDashboard, BookOpen } from 'lucide-react';
 import { modules } from '../data/modules';
 import { useJournal } from '../context/JournalContext';
+import { useOnboarding } from '../context/OnboardingContext';
 
 export default function Sidebar() {
   const location = useLocation();
   const { hasEntries, entries } = useJournal();
+  const { path, activeModules } = useOnboarding();
 
   const completedIds = new Set(entries.map(e => e.moduleId));
   const activeIndex = modules.findIndex(m => location.pathname.startsWith(m.path));
@@ -60,26 +62,61 @@ export default function Sidebar() {
             {modules.map((mod, idx) => {
               const isCompleted = completedIds.has(mod.id);
               const isCurrent = idx === activeIndex && !isCompleted;
+              const onPath = path ? activeModules.has(mod.number) : true;
+              const dimmed = !onPath;
 
               return (
-                <NavLink key={mod.id} to={mod.path} className={`relative flex items-start gap-4 group rounded-lg px-2 py-1.5 -mx-2 transition-colors ${isCurrent ? 'bg-ink/[0.04]' : ''}`}>
+                <NavLink
+                  key={mod.id}
+                  to={mod.path}
+                  className={`relative flex items-start gap-4 group rounded-lg px-2 py-1.5 -mx-2 transition-colors ${
+                    isCurrent ? 'bg-ink/[0.04]' : ''
+                  } ${dimmed ? 'opacity-45 hover:opacity-80' : ''}`}
+                  title={dimmed ? 'Not in your current path' : undefined}
+                >
                   {/* Node */}
                   <div className="relative z-10 mt-1 flex items-center justify-center w-6 h-6 bg-paper">
-                    {isCompleted && <div className="w-2 h-2 rounded-full bg-ink" />}
+                    {isCompleted && (
+                      <div className={`w-2 h-2 rounded-full ${dimmed ? 'bg-muted/60' : 'bg-ink'}`} />
+                    )}
                     {isCurrent && (
-                      <div className="w-3.5 h-3.5 rounded-full border-[1.5px] border-ink flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 rounded-full bg-ink" />
+                      <div
+                        className={`w-3.5 h-3.5 rounded-full border-[1.5px] ${dimmed ? 'border-muted/60' : 'border-ink'} flex items-center justify-center`}
+                      >
+                        <div className={`w-1.5 h-1.5 rounded-full ${dimmed ? 'bg-muted/60' : 'bg-ink'}`} />
                       </div>
                     )}
-                    {!isCompleted && !isCurrent && <div className="w-2 h-2 rounded-full border border-black/20 bg-paper" />}
+                    {!isCompleted && !isCurrent && (
+                      <div className="w-2 h-2 rounded-full border border-black/20 bg-paper" />
+                    )}
                   </div>
 
                   {/* Content */}
                   <div className="flex flex-col pt-0.5">
-                    <span className={`text-sm transition-colors ${isCurrent ? 'text-ink font-semibold' : isCompleted ? 'text-ink/80 group-hover:text-ink' : 'text-muted group-hover:text-ink/70'}`}>
+                    <span
+                      className={`text-sm transition-colors ${
+                        dimmed
+                          ? 'text-muted/70 group-hover:text-muted'
+                          : isCurrent
+                            ? 'text-ink font-semibold'
+                            : isCompleted
+                              ? 'text-ink/80 group-hover:text-ink'
+                              : 'text-ink/70 group-hover:text-ink'
+                      }`}
+                    >
                       Module {mod.number}: {mod.title}
                     </span>
-                    <span className={`text-xs mt-1 leading-snug ${isCurrent ? 'text-muted' : isCompleted ? 'text-muted/60' : 'text-muted/40 group-hover:text-muted/60 transition-colors'}`}>
+                    <span
+                      className={`text-xs mt-1 leading-snug ${
+                        dimmed
+                          ? 'text-muted/40'
+                          : isCurrent
+                            ? 'text-muted'
+                            : isCompleted
+                              ? 'text-muted/60'
+                              : 'text-muted/70 group-hover:text-muted transition-colors'
+                      }`}
+                    >
                       {mod.desc}
                     </span>
                   </div>
