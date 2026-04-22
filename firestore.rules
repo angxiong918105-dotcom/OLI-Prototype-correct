@@ -19,6 +19,13 @@ service cloud.firestore {
       match /journalEntries/{entryId} {
         allow read, write: if isOwner(uid);
       }
+
+      // Legacy subcollection still referenced by the migration + restart
+      // flows in src/firebase.ts. Allow the owner to read/delete their
+      // own legacy entries so migration doesn't fail on init.
+      match /responses/{entryId} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     match /{document=**} {

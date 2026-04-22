@@ -148,8 +148,9 @@ export function JournalProvider({ children }: { children: ReactNode }) {
         return entry;
       } catch (err) {
         console.error("Failed to save entry:", err);
+        const detail = err instanceof Error && err.message ? err.message : String(err);
         const message =
-          "We could not save your reflection right now. Please try again.";
+          `We could not save your reflection right now. Please try again. (${detail})`;
         setError(message);
         throw new Error(message);
       }

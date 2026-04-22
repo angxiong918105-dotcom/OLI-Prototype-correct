@@ -223,32 +223,43 @@ export default function Module4() {
   };
 
   const saveAndFinish = async () => {
+    if (saving) return;
     setSaving(true);
-    const parts: string[] = [];
-    if (perceptionMode)
-      parts.push(
-        `Perception mode: ${perceptionMode === 'fresh' ? 'Tends toward fresh eyes' : 'Tends to see through labels'}`,
+    try {
+      const parts: string[] = [];
+      if (perceptionMode)
+        parts.push(
+          `Perception mode: ${perceptionMode === 'fresh' ? 'Tends toward fresh eyes' : 'Tends to see through labels'}`,
+        );
+      if (newScenarioText) parts.push(`Experiment task: ${newScenarioText}`);
+      if (acceptanceText) parts.push(`Acceptance: ${acceptanceText}`);
+      if (newCuriosity.trim()) parts.push(`Curiosity glasses: ${newCuriosity.trim()}`);
+      if (newWonder.trim()) parts.push(`Wonder glasses: ${newWonder.trim()}`);
+      if (newFlow.trim()) parts.push(`Simple flow: ${newFlow.trim()}`);
+
+      localStorage.setItem('journal_m4_status', 'available');
+
+      await addEntry({
+        moduleId: 'branching',
+        moduleTitle: 'From Wonder to Flow',
+        selectedSignals: newScenarioText ? [newScenarioText] : [],
+        reflectionText: parts.join('\n') || undefined,
+        mcqResults: {
+          ...(glassesMCQSubmitted && glassesMCQ ? { glasses: glassesMCQ === 'b' } : {}),
+          ...(flowMCQSubmitted && flowMCQ ? { flow: flowMCQ === 'b' } : {}),
+        },
+      });
+
+      navigate('/');
+    } catch (err) {
+      console.error('Module 4 saveAndFinish failed:', err);
+      const detail = err instanceof Error && err.message ? err.message : String(err);
+      alert(
+        `We couldn't save your reflection right now.\n\n${detail}\n\nPlease check your connection and try again. Details also logged to the browser console.`,
       );
-    if (newScenarioText) parts.push(`Experiment task: ${newScenarioText}`);
-    if (acceptanceText) parts.push(`Acceptance: ${acceptanceText}`);
-    if (newCuriosity.trim()) parts.push(`Curiosity glasses: ${newCuriosity.trim()}`);
-    if (newWonder.trim()) parts.push(`Wonder glasses: ${newWonder.trim()}`);
-    if (newFlow.trim()) parts.push(`Simple flow: ${newFlow.trim()}`);
-
-    localStorage.setItem('journal_m4_status', 'available');
-
-    await addEntry({
-      moduleId: 'branching',
-      moduleTitle: 'From Wonder to Flow',
-      selectedSignals: newScenarioText ? [newScenarioText] : [],
-      reflectionText: parts.join('\n') || undefined,
-      mcqResults: {
-        ...(glassesMCQSubmitted && glassesMCQ ? { glasses: glassesMCQ === 'b' } : {}),
-        ...(flowMCQSubmitted && flowMCQ ? { flow: flowMCQ === 'b' } : {}),
-      },
-    });
-
-    navigate('/');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -923,7 +934,7 @@ export default function Module4() {
               <input
                 value={newScenarioCustom}
                 onChange={e => setNewScenarioCustom(e.target.value)}
-                placeholder="e.g. watering the plants, tidying the desk"
+                placeholder=""
                 className="mt-3 w-full rounded-xl border border-black/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink/40 transition-all"
               />
             )}
@@ -964,7 +975,7 @@ export default function Module4() {
                 <input
                   value={newCuriosity}
                   onChange={e => setNewCuriosity(e.target.value)}
-                  placeholder="e.g. I'll focus on the sound of the water boiling and the smell as it brews."
+                  placeholder=""
                   className="w-full rounded-xl border border-black/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink/40 transition-all"
                 />
               </div>
@@ -984,7 +995,7 @@ export default function Module4() {
                 <input
                   value={newWonder}
                   onChange={e => setNewWonder(e.target.value)}
-                  placeholder="e.g. Where did these beans come from before they reached me?"
+                  placeholder=""
                   className="w-full rounded-xl border border-black/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink/40 transition-all"
                 />
               </div>
@@ -1004,7 +1015,7 @@ export default function Module4() {
                 <input
                   value={newFlow}
                   onChange={e => setNewFlow(e.target.value)}
-                  placeholder="e.g. I'll keep my attention on the sound and smell until the cup is ready — nothing else."
+                  placeholder=""
                   className="w-full rounded-xl border border-black/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink/40 transition-all"
                 />
               </div>

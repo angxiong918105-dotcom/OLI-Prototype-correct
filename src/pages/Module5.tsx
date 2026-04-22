@@ -133,27 +133,37 @@ export default function Module5() {
   };
 
   const saveAndFinish = async () => {
+    if (saving) return;
     setSaving(true);
-    const parts: string[] = [];
-    if (currentStory) parts.push(`Current Story: ${currentStory}`);
-    if (activeValues.length > 0)
-      parts.push(`Compass Values: ${activeValues.join(', ')}`);
-    if (sightingValue && sightingAction)
-      parts.push(
-        `Coherency Sighting: Value "${sightingValue}" — ${sightingAction}. Meaning: ${sightingMeaning}`,
+    try {
+      const parts: string[] = [];
+      if (currentStory) parts.push(`Current Story: ${currentStory}`);
+      if (activeValues.length > 0)
+        parts.push(`Compass Values: ${activeValues.join(', ')}`);
+      if (sightingValue && sightingAction)
+        parts.push(
+          `Coherency Sighting: Value "${sightingValue}" — ${sightingAction}. Meaning: ${sightingMeaning}`,
+        );
+
+      await addEntry({
+        moduleId: 'ideate',
+        moduleTitle: 'Build a Personal Compass',
+        selectedSignals: activeValues,
+        reflectionText: parts.join('\n') || undefined,
+        mcqResults: compassMCQSubmitted && compassMCQ
+          ? { compass: compassMCQ === 'b' }
+          : undefined,
+      });
+
+      navigate('/');
+    } catch (err) {
+      console.error('Module 5 saveAndFinish failed:', err);
+      alert(
+        'We couldn\'t save your reflection right now. Please check your connection and try again.',
       );
-
-    await addEntry({
-      moduleId: 'ideate',
-      moduleTitle: 'Build a Personal Compass',
-      selectedSignals: activeValues,
-      reflectionText: parts.join('\n') || undefined,
-      mcqResults: compassMCQSubmitted && compassMCQ
-        ? { compass: compassMCQ === 'b' }
-        : undefined,
-    });
-
-    navigate('/');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

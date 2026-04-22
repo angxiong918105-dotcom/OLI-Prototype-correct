@@ -12,10 +12,10 @@ const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type EntryFeedbackPayload = {
-  journal_summary: string;
-  ai_question: string;
-  gibbs_stage: string;
+type FeedbackPayload = {
+  summary: string;
+  pattern: string;
+  next_step: string;
 };
 
 class ProviderError extends Error {
@@ -45,7 +45,7 @@ async function requestOpenAI(systemPrompt: string, userPrompt: string): Promise<
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      max_tokens: 250,
+      max_tokens: 350,
       temperature: 0.7,
       response_format: { type: 'json_object' },
     }),
@@ -64,7 +64,7 @@ async function requestOpenAI(systemPrompt: string, userPrompt: string): Promise<
 
 // ─── Response parser ─────────────────────────────────────────────────────────
 
-function parseEntryFeedbackPayload(raw: string): EntryFeedbackPayload | null {
+function parseFeedbackPayload(raw: string): FeedbackPayload | null {
   const cleaned = raw
     .replace(/^```json\s*/i, '')
     .replace(/^```\s*/i, '')
@@ -76,16 +76,31 @@ function parseEntryFeedbackPayload(raw: string): EntryFeedbackPayload | null {
   const jsonText = start >= 0 && end > start ? cleaned.slice(start, end + 1) : cleaned;
 
   try {
-    const parsed = JSON.parse(jsonText) as Partial<EntryFeedbackPayload>;
-    if (
-      typeof parsed.journal_summary === 'string' &&
-      typeof parsed.ai_question === 'string' &&
-      typeof parsed.gibbs_stage === 'string'
-    ) {
+    const parsed = JSON.parse(jsonText) as Record<string, unknown>;
+    const summary =
+      typeof parsed.summary === 'string'
+        ? parsed.summary
+        : typeof parsed.journal_summary === 'string'
+          ? parsed.journal_summary
+          : null;
+    const pattern =
+      typeof parsed.pattern === 'string'
+        ? parsed.pattern
+        : typeof parsed.analysis === 'string'
+          ? parsed.analysis
+          : null;
+    const next_step =
+      typeof parsed.next_step === 'string'
+        ? parsed.next_step
+        : typeof parsed.ai_question === 'string'
+          ? parsed.ai_question
+          : null;
+
+    if (summary && pattern && next_step) {
       return {
-        journal_summary: parsed.journal_summary.trim(),
-        ai_question: parsed.ai_question.trim(),
-        gibbs_stage: parsed.gibbs_stage.trim(),
+        summary: summary.trim(),
+        pattern: pattern.trim(),
+        next_step: next_step.trim(),
       };
     }
     return null;
@@ -94,100 +109,41 @@ function parseEntryFeedbackPayload(raw: string): EntryFeedbackPayload | null {
   }
 }
 
-// ─── System prompt (Gibbs Reflective Cycle) ──────────────────────────────────
+// ─── System prompt ───────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a thoughtful, warm reflective coach. Your only job is to read what the user wrote and ask ONE question that helps them think one level deeper. You do not summarize, advise, or evaluate. You ask questions. Your tone is curious and human, never clinical or performative.
+const SYSTEM_PROMPT = `You are a warm, thoughtful reflective coach. Read the learner's journal reflection and produce three short pieces of feedback.
 
-You use the Gibbs Reflective Cycle as a hidden diagnostic framework. The user never sees "Gibbs" mentioned. Use it only to determine what question to ask.
+Tone: curious, human, specific. Never clinical, never performative. Do not use phrases like "it sounds like" or "it seems like". Do not give advice as commands.
 
-Gibbs Stages and what they look like:
-- description: User describes facts, situations, what happened — push toward Feelings ("How did you feel?" / "What was your reaction?")
-- feelings: User mentions emotions, reactions, discomfort — push toward Evaluation ("What worked or didn't?")
-- evaluation: User notes what felt good or bad — push toward Analysis ("Why do you think that is?")
-- analysis: User explains reasons, patterns, causes — push toward Conclusion ("What are you taking away?")
-- conclusion: User articulates a learning or insight — push toward Action Plan ("What will you do or notice differently?")
-- action_plan: User identifies a next step or experiment — affirm and anchor the specificity of their intention with a question
-
-Rules for the question:
-1. Classify the user's reflection into one Gibbs stage. Choose the deepest stage their writing clearly reaches.
-2. Write ONE question (1–2 sentences) that moves them one stage deeper.
-3. Do not reference the user's words back verbatim. Do not paraphrase their response as a preamble.
-4. Do not use phrases like "it sounds like" or "it seems like."
-5. Do not give advice. Ask only.
-6. The question should feel like it came from a curious human, not a chatbot.
-
-For journal_summary:
-- Write 1–2 sentences synthesizing the most reflective moment in the user's response.
-- Write in third person ("The learner noticed...", "They described...").
-- Do not repeat the user's exact words. Distill the meaning.
-
-Return STRICT JSON:
+Return STRICT JSON with exactly these three string fields:
 {
-  "journal_summary": "1–2 sentence third-person synthesis of the most reflective response",
-  "ai_question": "The single question to show the user",
-  "gibbs_stage": "one of: description | feelings | evaluation | analysis | conclusion | action_plan"
-}`;
+  "summary": "1-2 sentences in third person synthesizing the most reflective moment in what they wrote. Distill meaning, do not paraphrase their words verbatim. Example: 'The learner noticed that slowing down changed how present they felt.'",
+  "pattern": "1-2 sentences naming a pattern, tension, or underlying signal you see in their reflection. Stay grounded in what they wrote. Avoid generic platitudes.",
+  "next_step": "ONE question or gentle invitation (1-2 sentences) that nudges them one level deeper — toward a feeling, cause, insight, or small experiment they could try. Phrase as a question when possible."
+}
 
-// ─── Per-module Gibbs calibration hints (PRD §3) ─────────────────────────────
-
-type ModuleGibbsContext = {
-  expectedStageRange: string;
-  pushDirection: string;
-  questionStyle: string;
-};
-
-const MODULE_GIBBS_CONTEXT: Record<string, ModuleGibbsContext> = {
-  reframe: {
-    expectedStageRange: 'description to feelings',
-    pushDirection: 'feelings toward evaluation — probe whether the feeling lasts or fades',
-    questionStyle:
-      'Probe the durability or reliability of the feeling. E.g. "When you notice that feeling fading, what do you usually do next?"',
-  },
-  observe: {
-    expectedStageRange: 'description to evaluation',
-    pushDirection: 'evaluation toward analysis — ask what was actually happening inside them',
-    questionStyle:
-      'Surface the internal mechanism, not the external event. E.g. "What do you think was happening in you during that moment — not around you, but inside?"',
-  },
-  branching: {
-    expectedStageRange: 'evaluation to analysis',
-    pushDirection: 'analysis toward conclusion — ask what it would mean about them if this worked',
-    questionStyle:
-      'Connect the hypothetical to identity, not logistics. E.g. "If this actually worked out — not just the outcome, but the version of you that did it — what would that tell you about yourself?"',
-  },
-  ideate: {
-    expectedStageRange: 'conclusion to action_plan',
-    pushDirection: 'action_plan — anchor their intention to a specific upcoming moment',
-    questionStyle:
-      'Make the intention concrete and near-term without being prescriptive. E.g. "When in the next week might you actually have a chance to choose that — even in a small way?"',
-  },
-};
+Rules:
+1. Base all three fields on what the learner actually wrote.
+2. Never mention frameworks, stages, or coaching jargon.
+3. Keep each field short and specific.
+4. Return JSON only — no preamble, no code fences.`;
 
 // ─── User prompt builder ─────────────────────────────────────────────────────
 
 function buildUserPrompt(
-  moduleId: string,
-  moduleTitle: string,
+  moduleId: string | undefined,
+  moduleTitle: string | undefined,
   selectedSignals: string[],
   reflectionText: string,
 ): string {
-  const lines: string[] = [`Module: ${moduleTitle} (${moduleId})`];
+  const lines: string[] = [];
+  if (moduleTitle || moduleId) {
+    lines.push(`Module: ${moduleTitle ?? moduleId}${moduleId && moduleTitle ? ` (${moduleId})` : ''}`);
+  }
   if (selectedSignals.length > 0) {
     lines.push(`Selected signals: ${selectedSignals.join(', ')}`);
   }
-  if (reflectionText.trim()) {
-    lines.push(`Reflection: ${reflectionText.trim()}`);
-  }
-
-  const ctx = MODULE_GIBBS_CONTEXT[moduleId];
-  if (ctx) {
-    lines.push('');
-    lines.push('Calibration hint (not visible to user):');
-    lines.push(`- Users at this module typically write at the ${ctx.expectedStageRange} stage.`);
-    lines.push(`- Push direction: ${ctx.pushDirection}.`);
-    lines.push(`- Question style: ${ctx.questionStyle}`);
-  }
-
+  lines.push(`Reflection: ${reflectionText.trim()}`);
   return lines.join('\n');
 }
 
@@ -198,30 +154,41 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.post('/api/feedback', async (req, res) => {
-  const { moduleId, moduleTitle, selectedSignals, reflectionText } = req.body ?? {};
+  const body = (req.body ?? {}) as Record<string, unknown>;
 
-  if (typeof moduleId !== 'string' || !moduleId.trim()) {
-    return res.status(400).json({ error: 'Missing or invalid moduleId.' });
+  // Accept both legacy ({ journalEntry }) and richer ({ moduleId, reflectionText, ... }) payloads.
+  const reflectionRaw =
+    typeof body.reflectionText === 'string' && body.reflectionText.trim()
+      ? body.reflectionText
+      : typeof body.journalEntry === 'string'
+        ? body.journalEntry
+        : '';
+
+  if (!reflectionRaw.trim()) {
+    return res.status(400).json({ error: 'Missing reflection text.' });
   }
-  if (typeof reflectionText !== 'string' || !reflectionText.trim()) {
-    return res.status(400).json({ error: 'Missing or invalid reflectionText.' });
-  }
 
-  const moduleTitleStr = typeof moduleTitle === 'string' ? moduleTitle : moduleId;
-  const signals: string[] = Array.isArray(selectedSignals) ? selectedSignals : [];
-  const reflection = reflectionText.trim();
+  const moduleId = typeof body.moduleId === 'string' && body.moduleId.trim() ? body.moduleId : undefined;
+  const moduleTitle = typeof body.moduleTitle === 'string' ? body.moduleTitle : undefined;
+  const selectedSignals: string[] = Array.isArray(body.selectedSignals)
+    ? (body.selectedSignals as unknown[]).filter((v): v is string => typeof v === 'string')
+    : [];
 
-  const userPrompt = buildUserPrompt(moduleId, moduleTitleStr, signals, reflection);
+  const userPrompt = buildUserPrompt(moduleId, moduleTitle, selectedSignals, reflectionRaw);
 
   try {
     const raw = await requestOpenAI(SYSTEM_PROMPT, userPrompt);
-    const parsed = parseEntryFeedbackPayload(raw);
+    const parsed = parseFeedbackPayload(raw);
 
     if (!parsed) {
+      console.error('/api/feedback: invalid model output', raw);
       return res.status(502).json({ error: 'Model did not return valid feedback JSON' });
     }
 
-    console.info('/api/feedback gibbs_stage:', parsed.gibbs_stage);
+    console.info('/api/feedback ok', {
+      moduleId,
+      summary: parsed.summary.slice(0, 80),
+    });
     return res.json(parsed);
   } catch (err) {
     if (err instanceof ProviderError) {
@@ -229,6 +196,79 @@ app.post('/api/feedback', async (req, res) => {
       return res.status(err.status).json({ error: err.message });
     }
     console.error('Error generating feedback:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─── /api/pattern — cross-entry pattern insight ──────────────────────────────
+
+type PatternEntry = {
+  moduleId: string;
+  moduleTitle?: string;
+  selectedSignals?: string[];
+  reflectionText?: string;
+};
+
+const PATTERN_SYSTEM_PROMPT = `You are a reflective coach reading multiple recent journal entries from the same learner across different modules.
+
+Look for a cross-entry pattern — a recurring tension, stance, or underlying signal that shows up in more than one entry. Do not summarize each entry. Do not give advice.
+
+Return STRICT JSON with two string fields:
+{
+  "pattern": "2-3 sentences naming the recurring pattern or tension you see across entries. Ground it in specifics from what they wrote, without quoting long passages.",
+  "next_step": "1 sentence — a gentle reflective question or invitation that points at the pattern."
+}
+
+Rules: return JSON only. No preamble, no code fences. Keep it concrete and specific to this learner.`;
+
+app.post('/api/pattern', async (req, res) => {
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const entries = Array.isArray(body.entries) ? (body.entries as PatternEntry[]) : [];
+
+  if (entries.length === 0) {
+    return res.status(400).json({ error: 'No entries provided.' });
+  }
+
+  const lines: string[] = [];
+  entries.forEach((entry, idx) => {
+    const title = entry.moduleTitle || entry.moduleId || `Entry ${idx + 1}`;
+    lines.push(`— Entry ${idx + 1} (${title}) —`);
+    if (Array.isArray(entry.selectedSignals) && entry.selectedSignals.length > 0) {
+      lines.push(`Selected signals: ${entry.selectedSignals.join(', ')}`);
+    }
+    if (typeof entry.reflectionText === 'string' && entry.reflectionText.trim()) {
+      lines.push(`Reflection: ${entry.reflectionText.trim()}`);
+    }
+    lines.push('');
+  });
+  const userPrompt = lines.join('\n');
+
+  try {
+    const raw = await requestOpenAI(PATTERN_SYSTEM_PROMPT, userPrompt);
+    const cleaned = raw
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/\s*```$/, '')
+      .trim();
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    const jsonText = start >= 0 && end > start ? cleaned.slice(start, end + 1) : cleaned;
+    const parsed = JSON.parse(jsonText) as { pattern?: unknown; next_step?: unknown };
+
+    if (typeof parsed.pattern !== 'string' || typeof parsed.next_step !== 'string') {
+      return res.status(502).json({ error: 'Model did not return valid pattern JSON' });
+    }
+
+    return res.json({
+      pattern: parsed.pattern.trim(),
+      next_step: parsed.next_step.trim(),
+    });
+  } catch (err) {
+    if (err instanceof ProviderError) {
+      console.error('/api/pattern provider error:', err.message);
+      return res.status(err.status).json({ error: err.message });
+    }
+    console.error('Error generating pattern insight:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

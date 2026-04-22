@@ -53,7 +53,7 @@ function aiInsight(n: number): string {
 
 export default function Dashboard() {
   const { entries, latestEntry, hasEntries, loading, restart } = useJournal();
-  const { path, activeModules } = useOnboarding();
+  const { path, activeModules, setPath } = useOnboarding();
   const pathModules = path
     ? modules.filter((m) => activeModules.has(m.number))
     : modules;
@@ -67,6 +67,12 @@ export default function Dashboard() {
   const openOnboarding = (mode: 'start' | 'restart') => {
     setOnboardingMode(mode);
     setOnboardingOpen(true);
+  };
+
+  const handleStartOver = async () => {
+    await restart();
+    setPath(null);
+    openOnboarding('restart');
   };
 
   const handleOnboardingFinish = async (_path: OnboardingPath) => {
@@ -163,16 +169,14 @@ export default function Dashboard() {
       <OLMDashboard entries={entries} />
 
       {/* ── Restart ───────────────────────────────────────────── */}
-      {hasEntries && (
-        <div className="mt-6 flex justify-end">
-          <button
-            onClick={() => openOnboarding('restart')}
-            className="text-xs text-muted hover:text-ink transition-colors underline underline-offset-2"
-          >
-            Start over
-          </button>
-        </div>
-      )}
+      <div className="mt-6 flex justify-end">
+        <button
+          onClick={handleStartOver}
+          className="text-xs text-muted hover:text-ink transition-colors underline underline-offset-2"
+        >
+          Start over
+        </button>
+      </div>
 
       {/* ── Recent Insights / Journal ─────────────────────────── */}
       <div className="mt-10 p-8 rounded-2xl border border-black/[0.08] bg-white shadow-sm">

@@ -262,7 +262,15 @@ async function migrateLegacyResponsesToJournalEntries(uid: string): Promise<numb
     return userData.legacyResponsesMigratedCount ?? 0;
   }
 
-  const legacySnap = await getDocs(collection(db, "users", uid, "responses"));
+  let legacySnap;
+  try {
+    legacySnap = await getDocs(collection(db, "users", uid, "responses"));
+  } catch (err) {
+    // If the legacy collection is blocked by rules (common in projects that
+    // never had it), silently skip migration rather than failing init.
+    console.warn("[firestore] Skipping legacy responses migration:", err);
+    return 0;
+  }
   if (legacySnap.empty) {
     await setDoc(
       userRef,
@@ -404,11 +412,17 @@ export async function restartUserProgress(uid: string): Promise<void> {
   await ensureUserProfile(uid);
 
   const journalSnap = await getDocs(collection(db, "users", uid, "journalEntries"));
-  const responsesSnap = await getDocs(collection(db, "users", uid, "responses"));
+  let responsesSnap;
+  try {
+    responsesSnap = await getDocs(collection(db, "users", uid, "responses"));
+  } catch (err) {
+    console.warn("[firestore] Skipping legacy responses cleanup on restart:", err);
+    responsesSnap = null;
+  }
 
   const batch = writeBatch(db);
   journalSnap.docs.forEach((d) => batch.delete(d.ref));
-  responsesSnap.docs.forEach((d) => batch.delete(d.ref));
+  responsesSnap?.docs.forEach((d) => batch.delete(d.ref));
 
   batch.set(doc(db, "users", uid), {
     uid,

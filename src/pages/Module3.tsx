@@ -169,36 +169,46 @@ export default function Module3() {
   };
 
   const saveAndFinish = async () => {
+    if (saving) return;
     setSaving(true);
-    const parts: string[] = [];
-    if (momentText) parts.push(`Meaningful moment: ${momentText}`);
-    if (momentType)
-      parts.push(
-        `Moment orientation: ${momentType === 'present' ? 'Fully present' : "Focused on what's next"}`,
-      );
-    if (fritzType)
-      parts.push(`Morning style: ${fritzOptions.find(o => o.id === fritzType)?.label ?? fritzType}`);
-    if (situation) parts.push(`Experiment situation: ${situation}`);
-    if (flipTrigger)
-      parts.push(
-        `FLIP trigger: ${triggerOptions.find(t => t.id === flipTrigger)?.label ?? flipTrigger}`,
-      );
-    if (flowFocus) parts.push(`Flow world focus: ${flowFocus}`);
+    try {
+      const parts: string[] = [];
+      if (momentText) parts.push(`Meaningful moment: ${momentText}`);
+      if (momentType)
+        parts.push(
+          `Moment orientation: ${momentType === 'present' ? 'Fully present' : "Focused on what's next"}`,
+        );
+      if (fritzType)
+        parts.push(`Morning style: ${fritzOptions.find(o => o.id === fritzType)?.label ?? fritzType}`);
+      if (situation) parts.push(`Experiment situation: ${situation}`);
+      if (flipTrigger)
+        parts.push(
+          `FLIP trigger: ${triggerOptions.find(t => t.id === flipTrigger)?.label ?? flipTrigger}`,
+        );
+      if (flowFocus) parts.push(`Flow world focus: ${flowFocus}`);
 
-    await addEntry({
-      moduleId: 'observe',
-      moduleTitle: 'Meaning Design: Flip the World Switch',
-      selectedSignals: fritzType
-        ? [fritzOptions.find(o => o.id === fritzType)?.label ?? '']
-        : [],
-      reflectionText: parts.join('\n') || undefined,
-      mcqResults: {
-        ...(page2MCQSubmitted && page2MCQ ? { flow_world: page2MCQ === 'b' } : {}),
-        ...(page3MCQSubmitted && page3MCQ ? { fritz: page3MCQ === 'b' } : {}),
-      },
-    });
+      await addEntry({
+        moduleId: 'observe',
+        moduleTitle: 'Meaning Design: Flip the World Switch',
+        selectedSignals: fritzType
+          ? [fritzOptions.find(o => o.id === fritzType)?.label ?? '']
+          : [],
+        reflectionText: parts.join('\n') || undefined,
+        mcqResults: {
+          ...(page2MCQSubmitted && page2MCQ ? { flow_world: page2MCQ === 'b' } : {}),
+          ...(page3MCQSubmitted && page3MCQ ? { fritz: page3MCQ === 'b' } : {}),
+        },
+      });
 
-    navigate('/');
+      navigate('/');
+    } catch (err) {
+      console.error('Module 3 saveAndFinish failed:', err);
+      alert(
+        'We couldn\'t save your reflection right now. Please check your connection and try again.',
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
