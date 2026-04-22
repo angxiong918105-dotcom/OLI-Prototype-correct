@@ -122,6 +122,28 @@ export default function Module4() {
   const [hasViewedCuriosityGarden, setHasViewedCuriosityGarden] = useState(false);
   const [isSoundFamiliarOpen, setIsSoundFamiliarOpen] = useState(false);
   const [soundFamiliarSelection, setSoundFamiliarSelection] = useState<string | null>(null);
+  const [versionDifference, setVersionDifference] = useState('');
+  const [versionDifferenceSubmitted, setVersionDifferenceSubmitted] = useState(false);
+  const [showTransactionalFraming, setShowTransactionalFraming] = useState(false);
+  const [showTransactionalLine, setShowTransactionalLine] = useState(false);
+
+  useEffect(() => {
+    if (!versionDifferenceSubmitted) {
+      setShowTransactionalFraming(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowTransactionalFraming(true), 1000);
+    return () => clearTimeout(timer);
+  }, [versionDifferenceSubmitted]);
+
+  useEffect(() => {
+    if (!soundFamiliarSelection) {
+      setShowTransactionalLine(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowTransactionalLine(true), 1000);
+    return () => clearTimeout(timer);
+  }, [soundFamiliarSelection]);
 
   // Section 2
   const [perceptionMode, setPerceptionMode] = useState<'labels' | 'fresh' | null>(null);
@@ -370,15 +392,6 @@ export default function Module4() {
                   </>
                 )}
               </div>
-              {showChecklistGarden && (
-                <div className="p-4 border-t border-black/5">
-                  <p className="text-sm text-ink/80 leading-relaxed">
-                    When you look at the garden this way, what you see is a series of actions. And
-                    notice that all the tasks are projections of yourself into a future that hasn't
-                    happened yet.
-                  </p>
-                </div>
-              )}
             </div>
 
             <div className="rounded-2xl border border-black/[0.08] bg-white shadow-sm overflow-hidden">
@@ -413,25 +426,73 @@ export default function Module4() {
                   </>
                 )}
               </div>
-              {showCuriosityGarden && (
-                <div className="p-4 border-t border-black/5">
-                  <p className="text-sm text-ink/80 leading-relaxed">
-                    Same garden. Completely different experience. You are spending time in the
-                    present moment.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 
           {hasCompletedScenarioCards && (
-            <div className="space-y-3">
-              <p className="font-serif text-[20px] text-ink leading-snug">
-                Psychologists call version 1 the transactional mindset, and it's your brain's
-                default setting.
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="space-y-2"
+            >
+              <label
+                htmlFor="version-difference"
+                className="block text-sm font-medium text-ink"
+              >
+                What feels different between version 2 and version 1?
+              </label>
+              <p className="text-xs text-muted">
+                A sentence or two is enough — just notice what shifts for you.
               </p>
+              <textarea
+                id="version-difference"
+                value={versionDifference}
+                onChange={(e) => setVersionDifference(e.target.value)}
+                disabled={versionDifferenceSubmitted}
+                rows={3}
+                placeholder="In version 2, I notice…"
+                className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/30 resize-none disabled:bg-black/[0.02] disabled:text-ink/70"
+              />
+              {!versionDifferenceSubmitted ? (
+                <div className="flex justify-end pt-1">
+                  <button
+                    onClick={() => setVersionDifferenceSubmitted(true)}
+                    disabled={versionDifference.trim().length === 0}
+                    className="px-4 py-2 rounded-lg bg-ink text-white text-sm font-medium hover:bg-ink/90 disabled:bg-ink/30 disabled:cursor-not-allowed"
+                  >
+                    Submit
+                  </button>
+                </div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="mt-2 rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3"
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted mb-1.5">
+                    Example Answer
+                  </p>
+                  <p className="text-sm text-ink/85 leading-relaxed">
+                    When you look at the garden in version A, what you see is a series of
+                    actions. Notice that all the tasks are projections of yourself into a future
+                    that hasn't happened yet. In the second garden, you are spending more time in
+                    the present moment.
+                  </p>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
 
-              <div className="mt-5 space-y-3">
+          {hasCompletedScenarioCards && showTransactionalFraming && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="space-y-3"
+            >
+              <div className="space-y-3">
                 <button
                   onClick={() => setIsSoundFamiliarOpen(v => !v)}
                   className="inline-flex items-center gap-2.5 px-5 py-3 rounded-xl border border-black/15 bg-white text-[11px] font-semibold uppercase tracking-widest text-ink/80 hover:bg-black/[0.03]"
@@ -466,7 +527,7 @@ export default function Module4() {
                         },
                       ]}
                       feedback={{
-                        a: "That's the default - and you're not alone. Most of us live here more than we realize. The transactional mindset is the brain's default setting. That's what this module is here to change.",
+                        a: "That's the default, and you're not alone. Most of us live here more than we realize. That's what this module is here to change.",
                         b: "That's rarer than you might think. Most of us don't, even when we think we do. The transactional mindset is the brain's default setting. That's what this module is here to change.",
                         c: "That's honest. Most of us swing toward A without noticing. The transactional mindset is the brain's default setting. That's what this module is here to change.",
                       }}
@@ -475,10 +536,22 @@ export default function Module4() {
                   </motion.div>
                 )}
               </div>
-            </div>
+
+              {showTransactionalLine && (
+                <motion.p
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="font-serif text-[20px] text-ink leading-snug pt-2"
+                >
+                  Psychologists call version 1 the transactional mindset. Many of us see a
+                  series of unfinished tasks all the time. It's our brain's default setting.
+                </motion.p>
+              )}
+            </motion.div>
           )}
 
-          {hasCompletedScenarioSection && (
+          {hasCompletedScenarioSection && showTransactionalLine && (
             <button
               onClick={goNext}
               className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-ink text-paper text-sm font-medium transition-all hover:bg-ink/85"

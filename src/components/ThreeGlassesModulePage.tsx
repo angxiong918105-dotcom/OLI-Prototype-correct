@@ -7,7 +7,7 @@ type GlassCard = {
   id: GlassKey;
   icon: string;
   label: string;
-  question: string;
+  question?: string;
   description: string;
   image: string;
   callout?: string;
@@ -34,7 +34,6 @@ const glassCards: GlassCard[] = [
     id: 'normal',
     icon: '🥽',
     label: 'Normal Glasses',
-    question: '"What do I need to do here?"',
     description:
       "You see tasks, to-dos, problems to solve. You're in the transactional world, oriented toward the future.",
     image: '/M4-3.1.png',
@@ -43,7 +42,6 @@ const glassCards: GlassCard[] = [
     id: 'curiosity',
     icon: '🔍',
     label: 'Curiosity Glasses',
-    question: '"Hmmm — what more is there to see?"',
     description:
       "You start noticing things as they actually are. Details. Patterns. Small surprises. You're shifting toward the flow world.",
     image: '/M4-3.2.png',
@@ -52,7 +50,6 @@ const glassCards: GlassCard[] = [
     id: 'wonder',
     icon: '✨',
     label: 'Wonder Glasses',
-    question: '"There\'s something wonderful here — what is it?"',
     description:
       "If you push curiosity far enough, something will shift. You encounter mystery. Mystery is a sense that you're touching something much larger than you can fully grasp. That's wonder.",
     image: '/M4-3.3.png',
@@ -312,10 +309,12 @@ export default function ThreeGlassesModulePage({ onContinue }: ThreeGlassesModul
                                 </div>
                               </div>
                               <div className="pr-5 pb-5 pl-7 pt-3">
-                                <p className="text-base leading-relaxed text-ink/85 font-medium">
-                                  {card.question}
-                                </p>
-                                <p className="mt-2 text-sm leading-relaxed text-ink/85">
+                                {card.question && (
+                                  <p className="text-base leading-relaxed text-ink/85 font-medium">
+                                    {card.question}
+                                  </p>
+                                )}
+                                <p className={`${card.question ? 'mt-2' : ''} text-sm leading-relaxed text-ink/85`}>
                                   {card.description}
                                 </p>
                                 {card.callout && (
